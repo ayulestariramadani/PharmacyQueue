@@ -1,0 +1,74 @@
+QMainWindow{
+    background-color: #003468;
+}
+QLabel{
+    font-family: 'Sagoe UI';
+    color: white;
+}
+QLabel#title{
+    font-weight: bold;
+    font-size: 40px;
+    color: #fff;   
+}
+#date_txt{
+    background-color: #001A33;
+    padding: 15px;
+}
+QLabel#patient{
+    font-size: 45px;
+    color: black;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+QListWidget{
+    background-color: #003468;
+    color: #fff;
+    font-size: 40px;
+}
+
+#panggil_button{
+    background-color: #0080FF;
+    border-radius: 10px;
+}
+#patient_list_item {
+    font-size: 20px;
+    font-weight: -100;
+}
+QLabel#queue_title{
+    font-weight: bold;
+    font-size: 40px;
+    color: #003468;   
+}
+#norm_label{
+    font-size: 128px;
+    font-weight: 700;
+    color: black;
+}
+#name_label{
+    font-size: 40px;
+    font-weight: 700;
+    color: #003468;
+}
+#search_widget{
+    background-color: white;
+    border-radius: 20px;
+    border: 1px solid #919191;
+}
+#search_bar{
+    border: none;
+    background-color: white;
+    color: black;
+    padding: 5px; /* Padding for better look */
+    outline: none; /* Remove the default focus frame */
+}
+#close_button{
+    border: none;
+    background: none;
+    color: #919191;
+    text-decoration: underline;
+}
+#close_button:hover {
+    color: black;
+}
