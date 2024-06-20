@@ -20,18 +20,28 @@ class CurrentQueueApp(QWidget):
         super().__init__()
         self.initSocketClient()
         self.isAdmin = isAdmin
-        self.setStyleSheet('background-color: white')
+        self.setObjectName('current_queue')
 
         # Define the box is vertical stack
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
-
+        layout.setContentsMargins(0, 0, 0, 0)
+        
+        
         if not self.isAdmin:
             self.education_video = VideoPlayer()
             self.education_video.show()
 
-            layout.addWidget(self.education_video)
+            layout.addWidget(self.education_video,1)
+
+
+        logo_label = QLabel()
+        pixmap = QPixmap('assets/1.png')
+        logo_pixmap = pixmap.scaledToWidth(248,Qt.SmoothTransformation)
+        logo_label.setPixmap(logo_pixmap)
+        logo_label.setAlignment(Qt.AlignCenter)
+
+        layout.addWidget(logo_label)
 
         # Add a label for title
         queue_title = QLabel("Antrian yang Dilayani")
@@ -39,20 +49,21 @@ class CurrentQueueApp(QWidget):
         queue_title.setAlignment(Qt.AlignCenter)
         # Add queue_title to main layout
         layout.addWidget(queue_title)
-    
-        # for data in datas:
+
         # Add Label Current Number
         self.norm_label = QLabel("-")
         self.norm_label.setObjectName('norm_label')
+        self.norm_label.setContentsMargins(0, 0, 0, 0)
+        self.norm_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.norm_label.setMinimumHeight(self.norm_label.sizeHint().height()+100)
+
         self.norm_label.setAlignment(Qt.AlignCenter)
-        # if not self.isAdmin:
-        #     self.norm_label.textChanged.connect(self.play_sound)
-        # Add current number to main layout
         layout.addWidget(self.norm_label)
 
         # Add Label Current Number
         self.name_label = QLabel("-")
         self.name_label.setObjectName('name_label')
+        self.name_label.setContentsMargins(0, 0, 0, 0)
         self.name_label.setAlignment(Qt.AlignCenter)
         self.name_label.setWordWrap(True)
         # Add current number to main layout
@@ -63,6 +74,7 @@ class CurrentQueueApp(QWidget):
 
         # Add Panggil Button
         panggil_button = QPushButton("Panggil ini")
+        panggil_button.setObjectName('panggil_button')
 
 
         # Add Refresh Button
@@ -71,8 +83,9 @@ class CurrentQueueApp(QWidget):
         button_layout.addWidget(panggil_button)
         button_layout.addWidget(refresh_button)
 
-        # layout.addWidget(button_widget)
-
+        if self.isAdmin:
+            layout.addWidget(button_widget)
+        self.setStyleSheet('background-color: white')
         self.setLayout(layout)
     
     def initSocketClient(self):

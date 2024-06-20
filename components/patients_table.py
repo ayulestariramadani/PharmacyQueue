@@ -9,7 +9,7 @@ from services.jsonParser import combine_pharmacy_data
 from services.client import SocketClient
 from functools import partial  
 
-class PatientsListApp(QWidget):
+class PatientsTableApp(QWidget):
     # Define custom signal
     order_selected = pyqtSignal(object)
 
@@ -66,10 +66,12 @@ class PatientsListApp(QWidget):
         # Add title to main layout
         self.layout.addWidget(title)
 
-        # Create a QListWidget
-        self.patient_list = QListWidget()
-        self.patient_list.setSpacing(0)
-        self.layout.addWidget(self.patient_list)
+        # Create table widget
+        self.patient_table = QTableWidget()
+        self.patient_table.setShowGrid(False)
+        self.patient_table.verticalHeader().setVisible(False)
+        self.patient_table.setWordWrap(False)
+        self.layout.addWidget(self.patient_table)
 
         # Add a label for title
         copyright_txt = QLabel("Copyright © 2024 by Tim IT RS Mata Makassar")
@@ -106,79 +108,47 @@ class PatientsListApp(QWidget):
         # self.name_text.clear()
 
     def populate_table(self):
-        # Clear list when update_filter is accessed
-        self.patient_list.clear()
+        # Clear the table
+        self.patient_table.clear()
+
+        # Set the column count and headers
+        headers = ['NORM', 'NAMA PASIEN', 'DOKTER', 'ASAL PASIEN']
+        if self.isAdmin:
+            headers.append('AKSI')
+        self.patient_table.setColumnCount(len(headers))
+        self.patient_table.setHorizontalHeaderLabels(headers)
 
         if self.isAdmin:
             filter_text = self.search_bar.text().lower()
         else:
             filter_text = ""
-        
+
         # Filter orders based on search text matching NAMA_LENGKAP or NORM
         filtered_orders = [order for order in self.orders if filter_text in order['NAMA_LENGKAP'].lower() or filter_text in order['NORM'].lower()]
 
-        if filtered_orders:
-            for order in filtered_orders:
-                list_item = QListWidgetItem()
+        self.patient_table.setRowCount(len(filtered_orders))
 
-                list_widget = QWidget()
-                list_widget.setObjectName('list_widget')
+        for row, order in enumerate(filtered_orders):
+            self.patient_table.setItem(row, 0, QTableWidgetItem(order['NORM']))
+            self.patient_table.setItem(row, 1, QTableWidgetItem(order['NAMA_LENGKAP']))
+            self.patient_table.setItem(row, 2, QTableWidgetItem(order['DOKTER']))
+            self.patient_table.setItem(row, 3, QTableWidgetItem(order['ASAL_PASIEN']))
+            
+            if self.isAdmin:
+                button = QPushButton("Panggil")
+                button.setObjectName('panggil_button')
+                button.clicked.connect(partial(self.send_message, [order['NORM'], order['NAMA_LENGKAP']]))
+                self.patient_table.setCellWidget(row, 4, button)
 
-                list_layout = QHBoxLayout()
-                list_layout.setContentsMargins(0, 0, 0, 0)
-                list_layout.setSpacing(0)
+        # Fix the width of columns
+        self.patient_table.setColumnWidth(0, 80)  # NORM
+        self.patient_table.setColumnWidth(1, 210)  # NAMA_LENGKAP
+        self.patient_table.setColumnWidth(2, 200)  # DOKTER
+        self.patient_table.setColumnWidth(3, 200)  # ASAL_PASIEN
+        if self.isAdmin:
+            self.patient_table.setColumnWidth(4, 100)  # Action
 
-                # Add a label for norm
-                norm_text = QLabel(f"{order['NORM']}")
-                norm_text.setObjectName('patient_list_item')
-                norm_text.setFixedSize(100, 30)
-
-                list_layout.addWidget(norm_text)
-
-                # Add a label for name_text
-                name_text = QLabel(f"{order['NAMA_LENGKAP']}")
-                name_text.setObjectName('patient_list_item')
-                name_text.setFixedSize(250, 30)
-
-                list_layout.addWidget(name_text)
-
-                # Add a label for asal_text
-                dokter_text = QLabel(f"{order['DOKTER']}")
-                dokter_text.setObjectName('patient_list_item')
-                dokter_text.setFixedSize(200, 30)
-                dokter_text.setAlignment(Qt.AlignLeft)
-
-                list_layout.addWidget(dokter_text)
-
-                # Add a label for asal_text
-                asal_text = QLabel(f"{order['ASAL_PASIEN']}")
-                asal_text.setObjectName('patient_list_item')
-                asal_text.setFixedSize(200, 30)
-                asal_text.setAlignment(Qt.AlignCenter)
-
-                list_layout.addWidget(asal_text)
-
-                if self.isAdmin:
-                    # Add a button
-                    panggil_button = QPushButton("Panggil")
-                    panggil_button.setObjectName('panggil_button')
-                    panggil_button.setFixedSize(100, 30)
-
-                    # Connect button to slot to emit order data
-                    panggil_button.clicked.connect(partial(self.send_message, [order['NORM'], order['NAMA_LENGKAP']]))
-
-                    list_layout.addWidget(panggil_button)
-
-                list_layout.addStretch()
-
-                # Set size for list item
-                list_layout.setSizeConstraint(QLayout.SetFixedSize)
-                list_widget.setLayout(list_layout)
-                list_item.setSizeHint(list_widget.sizeHint())
-
-                # Create list item to List widget
-                self.patient_list.addItem(list_item)
-                self.patient_list.setItemWidget(list_item, list_widget)
+        self.patient_table.resizeRowsToContents()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

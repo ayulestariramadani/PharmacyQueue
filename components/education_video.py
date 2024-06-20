@@ -56,7 +56,7 @@ class VideoPlayer(QWidget):
         
 
         vboxLayout = QVBoxLayout()
-        vboxLayout.setContentsMargins(0, 0, 0, 0)
+        vboxLayout.setContentsMargins(50, 20, 50, 20)
         vboxLayout.setSpacing(0)
         vboxLayout.addWidget(videowidget)
         vboxLayout.addLayout(controlLayout)
@@ -143,7 +143,7 @@ class VideoPlayer(QWidget):
             self.muteBtn.setToolTip('Unmute')
 
     def handleError(self):
-        self.label.setText("Error: " + self.mediaPlayer.errorString())
+        print("Error: " + self.mediaPlayer.errorString())
     
     def positionChanged(self, position):
         self.slider.setValue(position)

@@ -6,15 +6,20 @@ QLabel{
     color: white;
 }
 QLabel#title{
+    font-family: 'Sagoe UI';
     font-weight: bold;
     font-size: 40px;
-    color: #fff;   
+    color: #fff; 
+    margin:0px;  
 }
 #date_txt{
+    font-family: 'Sagoe UI';
     background-color: #001A33;
-    padding: 15px;
+    padding: 20px;
+    font-size: 17px;
 }
 QLabel#patient{
+    font-family: 'Sagoe UI';
     font-size: 45px;
     color: black;
     padding: 5px;
@@ -23,14 +28,22 @@ QLabel#patient{
     background-color: #f9f9f9;
 }
 QListWidget{
+    font-family: 'Sagoe UI';
     background-color: #003468;
     color: #fff;
     font-size: 40px;
 }
-
+#current_queue{
+    background-color: #fFF;
+}
 #panggil_button{
     background-color: #0080FF;
-    border-radius: 10px;
+    border-radius: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 15px;
+    padding-right: 15px;
+
 }
 #patient_list_item {
     font-size: 20px;
@@ -42,14 +55,20 @@ QLabel#queue_title{
     color: #003468;   
 }
 #norm_label{
+    font-family: 'Sagoe UI';
     font-size: 128px;
     font-weight: 700;
     color: black;
+    margin:0px;
+    padding:0px;
 }
 #name_label{
+    font-family: 'Sagoe UI';
     font-size: 40px;
     font-weight: 700;
     color: #003468;
+    margin:0px;
+    padding:0px;
 }
 #search_widget{
     background-color: white;
@@ -71,4 +90,23 @@ QLabel#queue_title{
 }
 #close_button:hover {
     color: black;
+}
+#ext_txt{
+    font-family: 'Sagoe UI';
+}
+QTableWidget {
+    background-color: #003468;
+    border: none;
+    font-size: 14px;
+}
+QTableWidget::item {
+    padding: 10px;
+    border: none;
+}
+QHeaderView::section {
+    background-color: #003468;
+    padding: 5px;
+    border: none;
+    font-weight: bold;
+    font-size: 14px
 }

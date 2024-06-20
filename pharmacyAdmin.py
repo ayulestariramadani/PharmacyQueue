@@ -4,8 +4,8 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import Qt
 from components.current_queue import CurrentQueueApp
-from components.patients_list import PatientsListApp
-from datetime import datetime
+from components.patients_table import PatientsTableApp
+from components.date_formatter import date_formatter
 
 class PharmacyDisplayApp(QMainWindow):
     def __init__(self):
@@ -20,13 +20,14 @@ class PharmacyDisplayApp(QMainWindow):
         self.screen_layout.setContentsMargins(0, 0, 0, 0)
         self.screen_layout.setSpacing(0)
 
-        current_date = datetime.now().date()
+        current_date = date_formatter()
 
         # Add a label for title
         date_txt = QLabel(f"{current_date}")
         date_txt.setObjectName('date_txt')
         date_txt.setAlignment(Qt.AlignRight)
         # Add date_txt to main layout
+
         self.screen_layout.addWidget(date_txt)
 
         self.main_layout = QHBoxLayout()
@@ -34,7 +35,7 @@ class PharmacyDisplayApp(QMainWindow):
         self.main_layout.setSpacing(0)
 
         # Call window patient list
-        self.patient_list = PatientsListApp(isAdmin=True)
+        self.patient_list = PatientsTableApp(isAdmin=True)
         self.patient_list.show()
 
         # Add left and right sections to the main layout with appropriate stretch factors
