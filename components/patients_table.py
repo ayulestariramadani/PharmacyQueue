@@ -104,7 +104,6 @@ class PatientsTableApp(QWidget):
     @pyqtSlot(list)
     def send_message(self, patient_data):
         message = f"NORM: {patient_data[0]}; Name: {patient_data[1]}; isCall: 1"
-        print(message)
         self.socket_client.send_message(message)
         # self.name_text.clear()
 

@@ -105,7 +105,6 @@ class CurrentQueueApp(QWidget):
     @pyqtSlot(str)
     def update_label(self, message):
         # Parse the message
-        print(f"ini{message}")
         try:
             # Split the message by commas
             parts = message.split(';')
