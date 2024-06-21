@@ -33,8 +33,8 @@ QListWidget{
     color: #fff;
     font-size: 40px;
 }
-#current_queue{
-    background-color: #fFF;
+#wrapper_widget{
+    background-color: #FFF;
 }
 #panggil_button{
     background-color: #0080FF;
@@ -44,6 +44,17 @@ QListWidget{
     padding-left: 15px;
     padding-right: 15px;
 
+}
+#refresh_button{
+    background-color: #919191;
+    border-radius: 5px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+#video_button{
+    color: white;
 }
 #patient_list_item {
     font-size: 20px;

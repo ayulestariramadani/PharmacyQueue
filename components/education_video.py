@@ -19,27 +19,32 @@ class VideoPlayer(QWidget):
 
         self.playBtn = QPushButton()
         self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+        self.playBtn.setObjectName('video_button')
         self.playBtn.setToolTip('Play')
         self.playBtn.clicked.connect(self.playPauseVideo)
 
         self.nextBtn = QPushButton()
         self.nextBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaSkipForward))
+        self.nextBtn.setObjectName('video_button')
         self.nextBtn.setToolTip('Next')
         self.nextBtn.clicked.connect(self.nextVideo)
 
         self.prevBtn = QPushButton()
         self.prevBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaSkipBackward))
+        self.prevBtn.setObjectName('video_button')
         self.prevBtn.setToolTip('Previous')
         self.prevBtn.clicked.connect(self.prevVideo)
         
 
         self.stopBtn = QPushButton()
         self.stopBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaStop))
+        self.stopBtn.setObjectName('video_button')
         self.stopBtn.setToolTip('Stop')
         self.stopBtn.clicked.connect(self.stopVideo)
 
         self.muteBtn = QPushButton()
         self.muteBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaVolumeMuted))
+        self.muteBtn.setObjectName('video_button')
         self.muteBtn.setToolTip('Mute')
         self.muteBtn.clicked.connect(self.muteVideo)
 
@@ -56,13 +61,14 @@ class VideoPlayer(QWidget):
         
 
         vboxLayout = QVBoxLayout()
-        vboxLayout.setContentsMargins(50, 20, 50, 20)
+        vboxLayout.setContentsMargins(50, 20, 50, 0)
         vboxLayout.setSpacing(0)
         vboxLayout.addWidget(videowidget)
         vboxLayout.addLayout(controlLayout)
         vboxLayout.addWidget(self.slider)
 
         self.setLayout(vboxLayout)
+        self.setStyleSheet("background-color: black;")
 
         self.mediaPlayer.setVideoOutput(videowidget)
         self.mediaPlayer.error.connect(self.handleError)
@@ -79,7 +85,7 @@ class VideoPlayer(QWidget):
         if self.playlist:
             self.playVideo(self.playlist[self.currentIndex])
         
-        self.hideControls
+        self.hideControls()
 
         self.controlTimer = QTimer()
         self.controlTimer.setInterval(3000)  

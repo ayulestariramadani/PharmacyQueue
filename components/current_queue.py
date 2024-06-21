@@ -22,8 +22,16 @@ class CurrentQueueApp(QWidget):
         self.isAdmin = isAdmin
         self.setObjectName('current_queue')
 
-        # Define the box is vertical stack
-        layout = QVBoxLayout(self)
+        
+        # Create the main layout
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Create a wrapper widget for the layout with background color
+        wrapper_widget = QWidget()
+        wrapper_widget.setObjectName('wrapper_widget')
+        layout = QVBoxLayout(wrapper_widget)
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
         
@@ -73,20 +81,21 @@ class CurrentQueueApp(QWidget):
         button_layout = QHBoxLayout(button_widget)
 
         # Add Panggil Button
-        panggil_button = QPushButton("Panggil ini")
+        panggil_button = QPushButton("Panggil")
         panggil_button.setObjectName('panggil_button')
 
 
         # Add Refresh Button
-        refresh_button = QPushButton("Refresh ini")
+        refresh_button = QPushButton("Refresh")
+        refresh_button.setObjectName('refresh_button')
 
         button_layout.addWidget(panggil_button)
         button_layout.addWidget(refresh_button)
 
         if self.isAdmin:
             layout.addWidget(button_widget)
-        self.setStyleSheet('background-color: white')
-        self.setLayout(layout)
+        main_layout.addWidget(wrapper_widget)
+        self.setLayout(main_layout)
     
     def initSocketClient(self):
         self.socket_client = SocketClient()
