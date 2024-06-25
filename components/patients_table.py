@@ -139,16 +139,23 @@ class PatientsTableApp(QWidget):
                 button.setObjectName('panggil_button')
                 button.clicked.connect(partial(self.send_message, [order['NORM'], order['NAMA_LENGKAP']]))
                 self.patient_table.setCellWidget(row, 4, button)
+        header = self.patient_table.horizontalHeader()
 
         # Fix the width of columns
-        self.patient_table.setColumnWidth(0, 80)  # NORM
-        self.patient_table.setColumnWidth(1, 210)  # NAMA_LENGKAP
-        self.patient_table.setColumnWidth(2, 200)  # DOKTER
-        self.patient_table.setColumnWidth(3, 200)  # ASAL_PASIEN
+        # self.patient_table.setColumnWidth(0, 80)  # NORM
+        # self.patient_table.setColumnWidth(1, 210)  # NAMA_LENGKAP
+        # self.patient_table.setColumnWidth(2, 200)  # DOKTER
+        # self.patient_table.setColumnWidth(3, 200)  # ASAL_PASIEN
+        # if self.isAdmin:
+        #     self.patient_table.setColumnWidth(4, 100)  # Action
+        header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         if self.isAdmin:
-            self.patient_table.setColumnWidth(4, 100)  # Action
-
-        self.patient_table.resizeRowsToContents()
+            header.setSectionResizeMode(4, QHeaderView.Fixed)
+            self.patient_table.setColumnWidth(4, 100)
+        # self.patient_table.resizeRowsToContents()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

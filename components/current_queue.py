@@ -4,16 +4,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from services.client import SocketClient
 from components.education_video import VideoPlayer
-from playsound import playsound
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 
-# Define a worker thread to play sound
-class SoundThread(QThread):
-    def __init__(self, sound_file):
-        super().__init__()
-        self.sound_file = sound_file
-
-    def run(self):
-        playsound(self.sound_file)
 
 class CurrentQueueApp(QWidget):
     def __init__(self, isAdmin=True):
@@ -40,23 +32,25 @@ class CurrentQueueApp(QWidget):
             self.education_video = VideoPlayer()
             self.education_video.show()
 
-            layout.addWidget(self.education_video,1)
+            layout.addWidget(self.education_video,3)
 
+        self.mediaPlayer = QMediaPlayer()
+        self.mediaPlayer.stateChanged.connect(self.handle_media_state_changed)
 
-        logo_label = QLabel()
-        pixmap = QPixmap('assets/1.png')
-        logo_pixmap = pixmap.scaledToWidth(248,Qt.SmoothTransformation)
-        logo_label.setPixmap(logo_pixmap)
-        logo_label.setAlignment(Qt.AlignCenter)
+        # logo_label = QLabel()
+        # pixmap = QPixmap('assets/1.png')
+        # logo_pixmap = pixmap.scaledToWidth(248,Qt.SmoothTransformation)
+        # logo_label.setPixmap(logo_pixmap)
+        # logo_label.setAlignment(Qt.AlignCenter)
 
-        layout.addWidget(logo_label)
+        # layout.addWidget(logo_label)
 
         # Add a label for title
         queue_title = QLabel("Antrian yang Dilayani")
         queue_title.setObjectName('queue_title')
-        queue_title.setAlignment(Qt.AlignCenter)
+        queue_title.setAlignment(Qt.AlignHCenter | Qt.AlignBottom)
         # Add queue_title to main layout
-        layout.addWidget(queue_title)
+        layout.addWidget(queue_title, 1)
 
         # Add Label Current Number
         self.norm_label = QLabel("-")
@@ -66,23 +60,27 @@ class CurrentQueueApp(QWidget):
         self.norm_label.setMinimumHeight(self.norm_label.sizeHint().height()+100)
 
         self.norm_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.norm_label)
+        layout.addWidget(self.norm_label, 1)
 
         # Add Label Current Number
         self.name_label = QLabel("-")
         self.name_label.setObjectName('name_label')
         self.name_label.setContentsMargins(0, 0, 0, 0)
-        self.name_label.setAlignment(Qt.AlignCenter)
+        self.name_label.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
         self.name_label.setWordWrap(True)
         # Add current number to main layout
-        layout.addWidget(self.name_label)
+        layout.addWidget(self.name_label, 1)
 
         button_widget = QWidget()
+        
         button_layout = QHBoxLayout(button_widget)
+        button_layout.setSpacing(50)
+        button_layout.setContentsMargins(50, 0, 50, 200)
 
         # Add Panggil Button
         panggil_button = QPushButton("Panggil")
         panggil_button.setObjectName('panggil_button')
+        
 
 
         # Add Refresh Button
@@ -93,7 +91,7 @@ class CurrentQueueApp(QWidget):
         button_layout.addWidget(refresh_button)
 
         if self.isAdmin:
-            layout.addWidget(button_widget)
+            layout.addWidget(button_widget,1)
         main_layout.addWidget(wrapper_widget)
         self.setLayout(main_layout)
     
@@ -127,21 +125,32 @@ class CurrentQueueApp(QWidget):
 
     def play_sound(self):
         number_list = self.angka_ke_nominal(self.norm_label.text())
-        sound_sequence = ['bell', 'nomor_rekam_medik'] + number_list.split()
+        sound_sequence = ['bell', 'nomorrm'] + number_list.split()
 
         self.play_sounds_in_sequence(sound_sequence, 0)
 
-    def play_sounds_in_sequence(self, sound_sequence, index):
-        self.education_video.mediaPlayer.setMuted(True)
-        if index >= len(sound_sequence):
+    def play_sounds_in_sequence(self, sound_sequence, start_index):
+        self.sound_sequence = sound_sequence
+        self.index = start_index
+        self.play_next_sound()
+    
+    def play_next_sound(self):
+        if self.index < len(self.sound_sequence):
+            sound_file = rf"D:\PharmacyQueue\PharmacyQueue\audio\{self.sound_sequence[self.index]}.wav"
+            url = QUrl.fromLocalFile(sound_file)
+            content = QMediaContent(url)
+            self.mediaPlayer.setMedia(content)
+            self.mediaPlayer.play()
+            self.index += 1
+        else:
+            self.mediaPlayer.setMedia(QMediaContent())
+            self.index = 0
             self.education_video.mediaPlayer.setMuted(False)
-            return
-        
-        sound_file = 'audio/' + sound_sequence[index] + '.wav'
-        self.sound_thread = SoundThread(sound_file)
-        self.sound_thread.finished.connect(lambda: self.play_sounds_in_sequence(sound_sequence, index + 1))
-        self.sound_thread.start()
-        
+
+    def handle_media_state_changed(self, state):
+        if state == QMediaPlayer.StoppedState:
+            self.play_next_sound()
+
     def angka_ke_nominal(self, angka):
         nominal = {
             '0': 'nol',

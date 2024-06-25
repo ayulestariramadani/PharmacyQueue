@@ -6,6 +6,7 @@ from PyQt5.QtCore import *
 from components.current_queue import CurrentQueueApp
 from components.patients_table import PatientsTableApp
 from components.date_formatter import date_formatter
+from components.header_queue import HeaderQueueApp
 
 
 class PharmacyDisplayApp(QMainWindow):
@@ -13,6 +14,7 @@ class PharmacyDisplayApp(QMainWindow):
         super().__init__()
 
         self.setWindowTitle('Pharmacy Display')
+        self.setWindowIcon(QIcon(r'D:\PharmacyQueue\PharmacyQueue\assets\1.png'))
         self.showFullScreen()
 
         # Main widget and layout
@@ -22,16 +24,18 @@ class PharmacyDisplayApp(QMainWindow):
         self.screen_layout.setContentsMargins(0, 0, 0, 0)
         self.screen_layout.setSpacing(0)
 
-        current_date = date_formatter()
+        # current_date = date_formatter()
 
-        # Add a label for title
-        date_txt = QLabel(f"{current_date}")
-        date_txt.setObjectName('date_txt')
-        date_txt.setAlignment(Qt.AlignRight)
-        # Add date_txt to main layout
+        # # Add a label for title
+        # date_txt = QLabel(f"{current_date}")
+        # date_txt.setObjectName('date_txt')
+        # date_txt.setAlignment(Qt.AlignRight)
+        # # Add date_txt to main layout
 
-        self.screen_layout.addWidget(date_txt)
-
+        # self.screen_layout.addWidget(date_txt)
+        self.header_queue = HeaderQueueApp()
+        self.header_queue.show()
+        self.screen_layout.addWidget(self.header_queue)
 
         main_layout = QHBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)

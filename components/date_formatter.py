@@ -1,7 +1,6 @@
 import locale
 from datetime import datetime
 
-   
 def date_formatter():
     # Set the locale
     try:

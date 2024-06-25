@@ -4,6 +4,7 @@ from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QFi
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from PyQt5.QtMultimediaWidgets import QVideoWidget
 from PyQt5.QtCore import QUrl, QDir, Qt, QTimer
+import logging
 
 
 class VideoPlayer(QWidget):
@@ -79,8 +80,8 @@ class VideoPlayer(QWidget):
         self.currentIndex = 0
 
         self.mediaPlayer.mediaStatusChanged.connect(self.mediaStatusChanged)
-
-        self.folder = "/Users/ayuramadani/Documents/rsmata/Pharmacy-Counter/video"  # Set specific folder path
+    
+        self.folder = rf"D:\PharmacyQueue\PharmacyQueue\video"  # Set specific folder path
         self.loadVideos()
         if self.playlist:
             self.playVideo(self.playlist[self.currentIndex])
@@ -93,9 +94,13 @@ class VideoPlayer(QWidget):
         self.setMouseTracking(True)
 
     def loadVideos(self):
+        print(self.folder)
         if os.path.exists(self.folder):
             self.playlist = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if f.endswith(('.mp4', '.avi', '.mov', '.mkv'))]
             self.currentIndex = 0
+            print(self.playlist)
+        else:
+            logging.error(f"Folder does not exist: {self.folder}")
 
     def playVideo(self, videoPath):
         self.mediaPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(videoPath)))
