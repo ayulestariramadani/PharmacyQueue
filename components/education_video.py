@@ -81,7 +81,7 @@ class VideoPlayer(QWidget):
 
         self.mediaPlayer.mediaStatusChanged.connect(self.mediaStatusChanged)
     
-        self.folder = rf"D:\PharmacyQueue\PharmacyQueue\video"  # Set specific folder path
+        self.folder = rf"video"  # Set specific folder path
         self.loadVideos()
         if self.playlist:
             self.playVideo(self.playlist[self.currentIndex])

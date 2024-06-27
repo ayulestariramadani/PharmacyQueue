@@ -37,14 +37,6 @@ class CurrentQueueApp(QWidget):
         self.mediaPlayer = QMediaPlayer()
         self.mediaPlayer.stateChanged.connect(self.handle_media_state_changed)
 
-        # logo_label = QLabel()
-        # pixmap = QPixmap('assets/1.png')
-        # logo_pixmap = pixmap.scaledToWidth(248,Qt.SmoothTransformation)
-        # logo_label.setPixmap(logo_pixmap)
-        # logo_label.setAlignment(Qt.AlignCenter)
-
-        # layout.addWidget(logo_label)
-
         # Add a label for title
         queue_title = QLabel("Antrian yang Dilayani")
         queue_title.setObjectName('queue_title')
@@ -52,7 +44,7 @@ class CurrentQueueApp(QWidget):
         # Add queue_title to main layout
         layout.addWidget(queue_title, 1)
 
-        # Add Label Current Number
+        # Add Label Current Numbers
         self.norm_label = QLabel("-")
         self.norm_label.setObjectName('norm_label')
         self.norm_label.setContentsMargins(0, 0, 0, 0)
@@ -136,7 +128,7 @@ class CurrentQueueApp(QWidget):
     
     def play_next_sound(self):
         if self.index < len(self.sound_sequence):
-            sound_file = rf"D:\PharmacyQueue\PharmacyQueue\audio\{self.sound_sequence[self.index]}.wav"
+            sound_file = rf"audio\{self.sound_sequence[self.index]}.wav"
             url = QUrl.fromLocalFile(sound_file)
             content = QMediaContent(url)
             self.mediaPlayer.setMedia(content)

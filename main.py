@@ -7,11 +7,10 @@ from pharmacyAdmin import PharmacyDisplayApp
 def main():
     app = QApplication(sys.argv)
 
-    style_file = QFile(r'D:\PharmacyQueue\PharmacyQueue\pharmacy.qss')
+    style_file = QFile('pharmacy.qss')
     style_file.open(QFile.ReadOnly | QFile.Text)
     app.setStyleSheet(style_file.readAll().data().decode("utf-8"))
 
-    # app.setStyleSheet(Path(r'D:\PharmacyQueue\PharmacyQueue\pharmacy.qss').read_text())
     main_win = PharmacyDisplayApp()
     main_win.show()
     sys.exit(app.exec_())

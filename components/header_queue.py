@@ -22,7 +22,7 @@ class HeaderQueueApp(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
 
         logo_label = QLabel()
-        pixmap = QPixmap('D:/PharmacyQueue/PharmacyQueue/assets/1.png')
+        pixmap = QPixmap('assets/1.png')
         logo_pixmap = pixmap.scaledToWidth(200,Qt.SmoothTransformation)
         logo_label.setPixmap(logo_pixmap)
         logo_label.setAlignment(Qt.AlignLeft)

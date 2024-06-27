@@ -12,7 +12,6 @@ class PharmacyDisplayApp(QMainWindow):
         super().__init__()
 
         self.setWindowTitle('Pharmacy Admin')
-        self.setWindowIcon(QIcon(r'D:\PharmacyQueue\PharmacyQueue\assets\1.png'))
         self.showFullScreen()
 
         # Main widget and layout
@@ -20,14 +19,7 @@ class PharmacyDisplayApp(QMainWindow):
         self.screen_layout = QVBoxLayout(main_widget)
         self.screen_layout.setContentsMargins(0, 0, 0, 0)
         self.screen_layout.setSpacing(0)
-
-        # current_date = date_formatter()
-
-        # # Add a label for title
-        # date_txt = QLabel(f"{current_date}")
-        # date_txt.setObjectName('date_txt')
-        # date_txt.setAlignment(Qt.AlignRight)
-        # Add date_txt to main layout
+        
         self.header_queue = HeaderQueueApp()
         self.header_queue.show()
         self.screen_layout.addWidget(self.header_queue)
