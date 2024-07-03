@@ -126,3 +126,6 @@ QHeaderView::section {
     font-weight: bold;
     font-size: 20px
 }
+#button_widget{
+    background-color: #fff;
+}

@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import Qt, QTimer
 from components.current_queue import CurrentQueueApp
-from components.patients_table import PatientsTableApp
+from components.patients_table_refraksi import PatientsTableApp
 from components.header_queue import HeaderQueueApp
 
 
@@ -49,6 +49,8 @@ class PharmacyDisplayApp(QMainWindow):
         button_layout.setSpacing(50)
         button_layout.setContentsMargins(50, 0, 50, 200)
 
+        self.data = ["-","-"]
+
         # Add Panggil Button
         self.panggil_button = QPushButton("Panggil")
         self.panggil_button.setObjectName('panggil_button')
@@ -58,7 +60,6 @@ class PharmacyDisplayApp(QMainWindow):
         # Add Refresh Button
         refresh_button = QPushButton("Refresh")
         refresh_button.setObjectName('refresh_button')
-        refresh_button.clicked.connect(self.patient_list.load_data)
 
         button_layout.addWidget(self.panggil_button)
         button_layout.addWidget(refresh_button)
@@ -79,10 +80,9 @@ class PharmacyDisplayApp(QMainWindow):
     
     def update_data(self):
         # Handle the label text change
-        data = [self.current_queue.norm_label.text(), self.current_queue.name_label.text()]
-        print(data)
-        self.panggil_button.clicked.connect(partial(self.patient_list.send_message, data))
-    
+        self.data = [self.current_queue.norm_label.text(), self.current_queue.name_label.text()]
+        self.panggil_button.clicked.connect(partial(self.patient_list.send_message, self.data))
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:
             # Exit full screen mode
@@ -96,7 +96,6 @@ class PharmacyDisplayApp(QMainWindow):
                 # Enter full screen mode if currently not in full screen
                 self.showFullScreen()
             self.isFullScreen = not self.isFullScreen
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

@@ -5,7 +5,8 @@ from pathlib import Path
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from services.jsonParser import combine_pharmacy_data
+# from services.jsonParser import combine_pharmacy_data
+from services.jsonParser import get_order_refraksi
 from services.client import SocketClient
 from functools import partial  
 
@@ -92,9 +93,8 @@ class PatientsTableApp(QWidget):
 
     def removeText(self):
         self.search_bar.setText("")
-        
     def load_data(self):
-        self.orders = combine_pharmacy_data()
+        self.orders = get_order_refraksi()
         self.populate_table()
 
     def initSocketClient(self):
@@ -133,7 +133,7 @@ class PatientsTableApp(QWidget):
             self.patient_table.setItem(row, 0, QTableWidgetItem(order['NORM']))
             self.patient_table.setItem(row, 1, QTableWidgetItem(order['NAMA_LENGKAP']))
             self.patient_table.setItem(row, 2, QTableWidgetItem(order['DOKTER']))
-            self.patient_table.setItem(row, 3, QTableWidgetItem(order['ASAL_PASIEN']))
+            self.patient_table.setItem(row, 3, QTableWidgetItem(order['RUANGAN']))
             
             if self.isAdmin:
                 button = QPushButton("Panggil")

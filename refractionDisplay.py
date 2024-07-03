@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from components.current_queue import CurrentQueueApp
-from components.patients_table import PatientsTableApp
+from components.patients_table_refraksi import PatientsTableApp
 from components.date_formatter import date_formatter
 from components.header_queue import HeaderQueueApp
 

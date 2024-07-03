@@ -62,28 +62,7 @@ class CurrentQueueApp(QWidget):
         self.name_label.setWordWrap(True)
         # Add current number to main layout
         layout.addWidget(self.name_label, 1)
-
-        button_widget = QWidget()
         
-        button_layout = QHBoxLayout(button_widget)
-        button_layout.setSpacing(50)
-        button_layout.setContentsMargins(50, 0, 50, 200)
-
-        # Add Panggil Button
-        panggil_button = QPushButton("Panggil")
-        panggil_button.setObjectName('panggil_button')
-        
-
-
-        # Add Refresh Button
-        refresh_button = QPushButton("Refresh")
-        refresh_button.setObjectName('refresh_button')
-
-        button_layout.addWidget(panggil_button)
-        button_layout.addWidget(refresh_button)
-
-        if self.isAdmin:
-            layout.addWidget(button_widget,1)
         main_layout.addWidget(wrapper_widget)
         self.setLayout(main_layout)
     
@@ -127,6 +106,7 @@ class CurrentQueueApp(QWidget):
         self.play_next_sound()
     
     def play_next_sound(self):
+        self.education_video.mediaPlayer.audio_set_mute(True)
         if self.index < len(self.sound_sequence):
             sound_file = rf"audio\{self.sound_sequence[self.index]}.wav"
             url = QUrl.fromLocalFile(sound_file)
@@ -137,7 +117,7 @@ class CurrentQueueApp(QWidget):
         else:
             self.mediaPlayer.setMedia(QMediaContent())
             self.index = 0
-            self.education_video.mediaPlayer.setMuted(False)
+            self.education_video.mediaPlayer.audio_set_mute(False)
 
     def handle_media_state_changed(self, state):
         if state == QMediaPlayer.StoppedState:
