@@ -1,3 +1,7 @@
 venv/
 **/__pycache__/
 .env
+AppInstaller/
+build/
+dist/
+main.spec
