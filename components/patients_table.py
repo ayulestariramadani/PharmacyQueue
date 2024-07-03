@@ -1,4 +1,3 @@
-# file: display_data.py
 import sys
 import qtawesome as qta
 from pathlib import Path
@@ -7,7 +6,8 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from services.jsonParser import combine_pharmacy_data
 from services.client import SocketClient
-from functools import partial  
+from functools import partial
+from components.custom_button import CustomButton  
 
 class PatientsTableApp(QWidget):
     # Define custom signal
@@ -133,30 +133,48 @@ class PatientsTableApp(QWidget):
             self.patient_table.setItem(row, 0, QTableWidgetItem(order['NORM']))
             self.patient_table.setItem(row, 1, QTableWidgetItem(order['NAMA_LENGKAP']))
             self.patient_table.setItem(row, 2, QTableWidgetItem(order['DOKTER']))
-            self.patient_table.setItem(row, 3, QTableWidgetItem(order['ASAL_PASIEN']))
+
+            asal_patient = QTableWidgetItem(order['ASAL_PASIEN'])
+            asal_patient.setTextAlignment(Qt.AlignCenter)
+            self.patient_table.setItem(row, 3, asal_patient)
             
             if self.isAdmin:
-                button = QPushButton("Panggil")
+                button = CustomButton(' Panggil', "assets/speaker.png")
                 button.setObjectName('panggil_button')
+                button.setMinimumHeight(25)
                 button.clicked.connect(partial(self.send_message, [order['NORM'], order['NAMA_LENGKAP']]))
-                self.patient_table.setCellWidget(row, 4, button)
-        header = self.patient_table.horizontalHeader()
 
-        # Fix the width of columns
-        # self.patient_table.setColumnWidth(0, 80)  # NORM
-        # self.patient_table.setColumnWidth(1, 210)  # NAMA_LENGKAP
-        # self.patient_table.setColumnWidth(2, 200)  # DOKTER
-        # self.patient_table.setColumnWidth(3, 200)  # ASAL_PASIEN
-        # if self.isAdmin:
-        #     self.patient_table.setColumnWidth(4, 100)  # Action
+                # Create a drop shadow effect
+                shadow = QGraphicsDropShadowEffect()
+                shadow.setBlurRadius(4)  # Set a smaller blur radius for a sharper shadow
+                shadow.setXOffset(0)     # Offset shadow to the right
+                shadow.setYOffset(5)     # Offset shadow to the bottom
+                shadow.setColor(QColor(0, 0, 0, 100))  # RGBA
+
+                
+                
+                button_widget = QWidget()
+                button_layout = QHBoxLayout(button_widget)
+                button_layout.addWidget(button)
+                button_layout.setAlignment(Qt.AlignCenter)
+                button_layout.setContentsMargins(0, 0, 0, 0)
+                button_widget.setLayout(button_layout)
+
+                button_widget.setGraphicsEffect(shadow)
+
+
+                self.patient_table.setCellWidget(row, 4, button_widget)
+
+        header = self.patient_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
         header.setSectionResizeMode(2, QHeaderView.Stretch)
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         if self.isAdmin:
             header.setSectionResizeMode(4, QHeaderView.Fixed)
-            self.patient_table.setColumnWidth(4, 100)
-        # self.patient_table.resizeRowsToContents()
+            self.patient_table.setColumnWidth(4, 115)
+            
+        self.patient_table.resizeRowsToContents()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

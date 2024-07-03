@@ -40,28 +40,30 @@ QListWidget{
 }
 #panggil_button{
     background-color: #0080FF;
-    border-radius: 5px;
+    border-radius: 7px;
     padding-top: 2px;
     padding-bottom: 2px;
     padding-left: 15px;
     padding-right: 15px;
     color: white;
+    font-size: 15px;
+    border: none;
 }
 #refresh_button{
-    background-color: #919191;
-    border-radius: 5px;
+    background-color: #001A33;
+    border-radius: 7px;
     padding-top: 2px;
     padding-bottom: 2px;
     padding-left: 15px;
     padding-right: 15px;
     color: white;
+    font-size: 15px;
 }
 #video_button{
     color: white;
 }
 #patient_list_item {
     font-size: 20px;
-    font-weight: -100;
 }
 QLabel#queue_title{
     font-weight: bold;
@@ -124,7 +126,7 @@ QHeaderView::section {
     padding: 5px;
     border: none;
     font-weight: bold;
-    font-size: 20px
+    font-size: 20px;
 }
 #button_widget{
     background-color: #fff;

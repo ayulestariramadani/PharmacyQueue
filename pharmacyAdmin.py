@@ -7,6 +7,7 @@ from PyQt5.QtCore import Qt, QTimer
 from components.current_queue import CurrentQueueApp
 from components.patients_table import PatientsTableApp
 from components.header_queue import HeaderQueueApp
+from components.custom_button import CustomButton
 
 
 class PharmacyDisplayApp(QMainWindow):
@@ -50,18 +51,18 @@ class PharmacyDisplayApp(QMainWindow):
         button_layout.setContentsMargins(50, 0, 50, 200)
 
         # Add Panggil Button
-        self.panggil_button = QPushButton("Panggil")
+        self.panggil_button = CustomButton(" Panggil", "assets/speaker.png")
         self.panggil_button.setObjectName('panggil_button')
         # panggil_button.clicked.connect(partial(self.patient_list.send_message, [self.current_queue.norm_label.text(), self.current_queue.name_label.text()]))
 
 
         # Add Refresh Button
-        refresh_button = QPushButton("Refresh")
+        refresh_button = CustomButton(" Refresh", "assets/refresh.png")
         refresh_button.setObjectName('refresh_button')
         refresh_button.clicked.connect(self.patient_list.load_data)
 
-        button_layout.addWidget(self.panggil_button)
         button_layout.addWidget(refresh_button)
+        button_layout.addWidget(self.panggil_button)
         
         self.right_layout.addWidget(self.current_queue)
         self.right_layout.addWidget(button_widget)
