@@ -49,6 +49,15 @@ QListWidget{
     font-size: 15px;
     border: none;
 }
+#panggil_button:pressed{
+    background-color: #919191;
+}
+#panggil_button:disabled{
+    background-color: #919191;
+}
+#refresh_button:pressed{
+    background-color: #919191;
+}
 #refresh_button{
     background-color: #001A33;
     border-radius: 7px;

@@ -1,194 +1,41 @@
 import sys
-import os
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QSlider, QStyle
-from PyQt5.QtMultimediaWidgets import QVideoWidget
-from PyQt5.QtCore import QUrl, Qt, QTimer
-import vlc
-import logging
-import platform
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel
+from PyQt5.QtGui import QColor, QPainter, QLinearGradient
+from PyQt5.QtCore import Qt
 
-
-class VideoPlayer(QWidget):
+class ShadowWidget(QWidget):
     def __init__(self):
         super().__init__()
+        self.initUI()
 
-        self.setWindowTitle("Video Player")
-        self.setGeometry(350, 100, 655, 344)
+    def initUI(self):
+        self.setGeometry(100, 100, 300, 200)
+        self.setWindowTitle('Shadow Widget')
 
-        self.instance = vlc.Instance()
-        self.mediaPlayer = self.instance.media_player_new()
+        layout = QVBoxLayout(self)
 
-        videowidget = QVideoWidget()
+        # Example label, replace with your widget
+        label = QLabel("Widget with shadow", self)
+        label.setStyleSheet("background-color: white; color: black; border: 1px solid #aaa;")
+        layout.addWidget(label)
 
-        self.playBtn = QPushButton()
-        self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
-        self.playBtn.setObjectName('video_button')
-        self.playBtn.setToolTip('Play')
-        self.playBtn.clicked.connect(self.playPauseVideo)
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
 
-        self.nextBtn = QPushButton()
-        self.nextBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaSkipForward))
-        self.nextBtn.setObjectName('video_button')
-        self.nextBtn.setToolTip('Next')
-        self.nextBtn.clicked.connect(self.nextVideo)
+        # Create a linear gradient for the shadow effect
+        gradient = QLinearGradient(0, 0, self.width(), 0)
+        gradient.setColorAt(0.0, QColor(0, 0, 0, 100))
+        gradient.setColorAt(0.5, QColor(0, 0, 0, 50))
+        gradient.setColorAt(1.0, QColor(0, 0, 0, 0))
 
-        self.prevBtn = QPushButton()
-        self.prevBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaSkipBackward))
-        self.prevBtn.setObjectName('video_button')
-        self.prevBtn.setToolTip('Previous')
-        self.prevBtn.clicked.connect(self.prevVideo)
-
-        self.stopBtn = QPushButton()
-        self.stopBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaStop))
-        self.stopBtn.setObjectName('video_button')
-        self.stopBtn.setToolTip('Stop')
-        self.stopBtn.clicked.connect(self.stopVideo)
-
-        self.muteBtn = QPushButton()
-        self.muteBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaVolumeMuted))
-        self.muteBtn.setObjectName('video_button')
-        self.muteBtn.setToolTip('Mute')
-        self.muteBtn.clicked.connect(self.muteVideo)
-
-        self.slider = QSlider(Qt.Horizontal)
-        self.slider.setRange(0, 100)
-        self.slider.sliderMoved.connect(self.setPosition)
-
-        controlLayout = QHBoxLayout()
-        controlLayout.addWidget(self.playBtn)
-        controlLayout.addWidget(self.prevBtn)
-        controlLayout.addWidget(self.stopBtn)
-        controlLayout.addWidget(self.nextBtn)
-        controlLayout.addWidget(self.muteBtn)
-
-        vboxLayout = QVBoxLayout()
-        vboxLayout.setContentsMargins(50, 20, 50, 0)
-        vboxLayout.setSpacing(0)
-        vboxLayout.addWidget(videowidget)
-        vboxLayout.addLayout(controlLayout)
-        vboxLayout.addWidget(self.slider)
-
-        self.setLayout(vboxLayout)
-        self.setStyleSheet("background-color: black;")
-
-        # Set the video output
-        if platform.system() == "Windows":
-            self.mediaPlayer.set_hwnd(videowidget.winId())
-        else:
-            self.mediaPlayer.set_xwindow(videowidget.winId())
-
-        self.playlist = []
-        self.currentIndex = 0
-
-        self.folder = rf"video"  # Set specific folder path
-        self.loadVideos()
-        if self.playlist:
-            self.playVideo(self.playlist[self.currentIndex])
-
-        self.hideControls()
-
-        self.controlTimer = QTimer()
-        self.controlTimer.setInterval(3000)
-        self.controlTimer.timeout.connect(self.hideControls)
-        self.setMouseTracking(True)
-
-    def loadVideos(self):
-        print(self.folder)
-        if os.path.exists(self.folder):
-            self.playlist = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if f.endswith(('.mp4', '.avi', '.mov', '.mkv'))]
-            self.currentIndex = 0
-            print(self.playlist)
-        else:
-            logging.error(f"Folder does not exist: {self.folder}")
-
-    def playVideo(self, videoPath):
-        self.media = self.instance.media_new(videoPath)
-        self.mediaPlayer.set_media(self.media)
-        self.mediaPlayer.play()
-        self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
-        self.playBtn.setToolTip('Pause')
-
-    def mediaStatusChanged(self, status):
-        if status == vlc.State.Ended:
-            self.currentIndex += 1
-            if self.currentIndex >= len(self.playlist):
-                self.currentIndex = 0
-            self.playVideo(self.playlist[self.currentIndex])
-
-    def playPauseVideo(self):
-        if self.mediaPlayer.is_playing():
-            self.mediaPlayer.pause()
-            self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
-            self.playBtn.setToolTip('Play')
-        else:
-            self.mediaPlayer.play()
-            self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
-            self.playBtn.setToolTip('Pause')
-
-    def stopVideo(self):
-        self.mediaPlayer.stop()
-        self.positionChanged(0)
-        self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
-        self.playBtn.setToolTip('Play')
-
-    def nextVideo(self):
-        self.currentIndex += 1
-        if self.currentIndex >= len(self.playlist):
-            self.currentIndex = 0
-        self.playVideo(self.playlist[self.currentIndex])
-
-    def prevVideo(self):
-        self.currentIndex -= 1
-        if self.currentIndex < 0:
-            self.currentIndex = len(self.playlist) - 1
-        self.playVideo(self.playlist[self.currentIndex])
-
-    def muteVideo(self):
-        if self.mediaPlayer.audio_get_mute():
-            self.mediaPlayer.audio_set_mute(False)
-            self.muteBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaVolumeMuted))
-            self.muteBtn.setToolTip('Mute')
-        else:
-            self.mediaPlayer.audio_set_mute(True)
-            self.muteBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaVolume))
-            self.muteBtn.setToolTip('Unmute')
-
-    def handleError(self):
-        print("Error: " + self.mediaPlayer.errorString())
-
-    def positionChanged(self, position):
-        self.slider.setValue(position)
-
-    def durationChanged(self, duration):
-        self.slider.setRange(0, duration)
-
-    def setPosition(self, position):
-        self.mediaPlayer.set_time(position)
-
-    def mouseMoveEvent(self, event):
-        self.showControls()
-        self.controlTimer.start()
-
-    def showControls(self):
-        self.playBtn.show()
-        self.nextBtn.show()
-        self.prevBtn.show()
-        self.stopBtn.show()
-        self.muteBtn.show()
-        self.slider.show()
-        self.controlTimer.start()
-
-    def hideControls(self):
-        self.playBtn.hide()
-        self.nextBtn.hide()
-        self.prevBtn.hide()
-        self.stopBtn.hide()
-        self.muteBtn.hide()
-        self.slider.hide()
-
+        # Draw the gradient as a shadow on the left side
+        shadow_rect = self.rect()
+        shadow_rect.setWidth(10)  # Adjust the width of the shadow as needed
+        painter.fillRect(shadow_rect, gradient)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    player = VideoPlayer()
-    player.show()
+    shadow_widget = ShadowWidget()
+    shadow_widget.show()
     sys.exit(app.exec_())

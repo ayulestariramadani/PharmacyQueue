@@ -1,6 +1,5 @@
 import urllib.request
 import json
-import jwt
 from datetime import datetime
 from dotenv import dotenv_values
 
@@ -167,6 +166,29 @@ def combine_pharmacy_data():
         second_value = config[second_key]
 
         data = get_order_farmasi(first_value, second_value)
+        print(data)
+        try:
+            combined_data.extend(data)
+        except urllib.error.URLError as e:
+            print(f'Error: {e.reason}')
+    
+    return combined_data
+
+def combine_pharmacy_admin():
+    data_keys = [
+        ('FIRST_STATUS', 'FIRST_FARMASI'),
+        ('SECOND_STATUS', 'SECOND_FARMASI'),
+        ('THIRD_STATUS', 'THIRD_FARMASI')
+    ]
+
+    combined_data=[]
+    for first_key, second_key in data_keys:
+        first_value = config[first_key]
+        second_value = config[second_key]
+
+        data = get_order_farmasi(first_value, second_value)
+        if second_value == 1:
+            print(data)
         try:
             combined_data.extend(data)
         except urllib.error.URLError as e:

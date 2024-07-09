@@ -3,16 +3,20 @@ from pathlib import Path
 from functools import partial 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from PyQt5.QtCore import Qt, QTimer
+from PyQt5.QtCore import *
 from components.current_queue import CurrentQueueApp
 from components.patients_table import PatientsTableApp
 from components.header_queue import HeaderQueueApp
 from components.custom_button import CustomButton
+from services.client import SocketClient
+from functools import partial
 
 
 class PharmacyDisplayApp(QMainWindow):
     def __init__(self):
         super().__init__()
+
+        self.initSocketClient()
 
         self.setWindowTitle('Pharmacy Admin')
         self.showFullScreen()
@@ -49,11 +53,12 @@ class PharmacyDisplayApp(QMainWindow):
         button_layout = QHBoxLayout(button_widget)
         button_layout.setSpacing(50)
         button_layout.setContentsMargins(50, 0, 50, 200)
-
+        self.data = []
         # Add Panggil Button
         self.panggil_button = CustomButton(" Panggil", "assets/speaker.png")
         self.panggil_button.setObjectName('panggil_button')
-        # panggil_button.clicked.connect(partial(self.patient_list.send_message, [self.current_queue.norm_label.text(), self.current_queue.name_label.text()]))
+        self.panggil_button.clicked.connect(self.send_data)
+        # self.panggil_button.clicked.connect(partial(self.patient_list.send_message, [self.current_queue.norm_label.text(), self.current_queue.name_label.text()]))
 
 
         # Add Refresh Button
@@ -78,11 +83,23 @@ class PharmacyDisplayApp(QMainWindow):
         self.timer.timeout.connect(self.update_data)
         self.timer.start(1000)  # Update every second
     
+    def initSocketClient(self):
+        self.socket_client = SocketClient()
+        # self.socket_client.message_received.connect(self.update_label)
+        self.socket_client.start()
+    
+    @pyqtSlot(list)
+    def send_message(self, patient_data):
+        message = f"NORM: {patient_data[0]}; Name: {patient_data[1]}; isCall: 1"
+        self.socket_client.send_message(message)
+        # self.name_text.clear()
+    
     def update_data(self):
         # Handle the label text change
-        data = [self.current_queue.norm_label.text(), self.current_queue.name_label.text()]
-        print(data)
-        self.panggil_button.clicked.connect(partial(self.patient_list.send_message, data))
+        self.data = [self.current_queue.norm_label.text(), self.current_queue.name_label.text()]
+    
+    def send_data(self):
+        self.send_message(self.data)
     
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Escape:

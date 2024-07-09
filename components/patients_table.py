@@ -4,7 +4,7 @@ from pathlib import Path
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from services.jsonParser import combine_pharmacy_data
+from services.jsonParser import combine_pharmacy_data, combine_pharmacy_admin
 from services.client import SocketClient
 from functools import partial
 from components.custom_button import CustomButton  
@@ -94,7 +94,10 @@ class PatientsTableApp(QWidget):
         self.search_bar.setText("")
         
     def load_data(self):
-        self.orders = combine_pharmacy_data()
+        if self.isAdmin:
+            self.orders = combine_pharmacy_admin()
+        else:
+            self.orders = combine_pharmacy_data()
         self.populate_table()
 
     def initSocketClient(self):
@@ -162,8 +165,16 @@ class PatientsTableApp(QWidget):
 
                 button_widget.setGraphicsEffect(shadow)
 
-
-                self.patient_table.setCellWidget(row, 4, button_widget)
+                null_text = QLabel("")
+                if order['STATUS_FARMASI'] == '2':
+                    self.patient_table.setCellWidget(row, 4, null_text)
+                        
+                else:
+                    if order['STATUS_ORDER_RESEP'] == '1':
+                        button.setEnabled(False)
+                    self.patient_table.setCellWidget(row, 4, button_widget)
+                    
+                        
 
         header = self.patient_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)

@@ -1,48 +1,33 @@
 import sys
 import os
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QSlider, QStyle
-from PyQt5.QtMultimediaWidgets import QVideoWidget
-from PyQt5.QtCore import QUrl, Qt, QTimer
+from PyQt5.QtWidgets import QApplication, QMainWindow, QPushButton, QVBoxLayout, QWidget, QStyle, QHBoxLayout
+from PyQt5.QtCore import QTimer, QEvent
 import vlc
-import logging
-import platform
 
-
-class VideoPlayer(QWidget):
-    def __init__(self):
+class VideoPlayer(QMainWindow):
+    def __init__(self, folder_path):
         super().__init__()
 
-        self.setWindowTitle("Video Player")
-        self.setGeometry(350, 100, 655, 344)
+        self.setWindowTitle("PyQt VLC Video Player")
+        # self.setGeometry(100, 100, 600, 460)
 
         self.instance = vlc.Instance()
         self.mediaPlayer = self.instance.media_player_new()
 
-        videowidget = QVideoWidget()
+        self.timer = QTimer(self)
+        self.timer.setInterval(1000)
+        self.timer.timeout.connect(self.update_ui)
+
+        self.video_frame = QWidget(self)
+        # self.video_frame.setGeometry(10, 10, 500, 500)
+
+        self.controlLayout = QHBoxLayout()
 
         self.playBtn = QPushButton()
-        self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
+        self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
         self.playBtn.setObjectName('video_button')
         self.playBtn.setToolTip('Play')
-        self.playBtn.clicked.connect(self.playPauseVideo)
-
-        self.nextBtn = QPushButton()
-        self.nextBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaSkipForward))
-        self.nextBtn.setObjectName('video_button')
-        self.nextBtn.setToolTip('Next')
-        self.nextBtn.clicked.connect(self.nextVideo)
-
-        self.prevBtn = QPushButton()
-        self.prevBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaSkipBackward))
-        self.prevBtn.setObjectName('video_button')
-        self.prevBtn.setToolTip('Previous')
-        self.prevBtn.clicked.connect(self.prevVideo)
-
-        self.stopBtn = QPushButton()
-        self.stopBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaStop))
-        self.stopBtn.setObjectName('video_button')
-        self.stopBtn.setToolTip('Stop')
-        self.stopBtn.clicked.connect(self.stopVideo)
+        self.playBtn.clicked.connect(self.play_pause)
 
         self.muteBtn = QPushButton()
         self.muteBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaVolumeMuted))
@@ -50,98 +35,51 @@ class VideoPlayer(QWidget):
         self.muteBtn.setToolTip('Mute')
         self.muteBtn.clicked.connect(self.muteVideo)
 
-        self.slider = QSlider(Qt.Horizontal)
-        self.slider.setRange(0, 100)
-        self.slider.sliderMoved.connect(self.setPosition)
+        self.controlLayout.addWidget(self.playBtn)
+        self.controlLayout.addWidget(self.muteBtn)
 
-        controlLayout = QHBoxLayout()
-        controlLayout.addWidget(self.playBtn)
-        controlLayout.addWidget(self.prevBtn)
-        controlLayout.addWidget(self.stopBtn)
-        controlLayout.addWidget(self.nextBtn)
-        controlLayout.addWidget(self.muteBtn)
+        layout = QVBoxLayout()
+        layout.setContentsMargins(100, 30, 100, 30)
+        layout.addWidget(self.video_frame)
+        layout.addLayout(self.controlLayout)
 
-        vboxLayout = QVBoxLayout()
-        vboxLayout.setContentsMargins(50, 20, 50, 0)
-        vboxLayout.setSpacing(0)
-        vboxLayout.addWidget(videowidget)
-        vboxLayout.addLayout(controlLayout)
-        vboxLayout.addWidget(self.slider)
+        widget = QWidget()
+        widget.setLayout(layout)
+        self.setCentralWidget(widget)
 
-        self.setLayout(vboxLayout)
-        self.setStyleSheet("background-color: black;")
-
-        # Set the video output
-        if platform.system() == "Windows":
-            self.mediaPlayer.set_hwnd(videowidget.winId())
-        else:
-            self.mediaPlayer.set_xwindow(videowidget.winId())
-
-        self.playlist = []
-        self.currentIndex = 0
-
-        self.folder = rf"video"  # Set specific folder path
-        self.loadVideos()
-        if self.playlist:
-            self.playVideo(self.playlist[self.currentIndex])
-
-        self.hideControls()
+        self.video_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path)
+                            if f.lower().endswith(('.mp4', '.avi', '.mkv', '.mov'))]
+        self.current_index = 0
+        if self.video_files:
+            self.play_video(self.video_files[self.current_index])
 
         self.controlTimer = QTimer()
         self.controlTimer.setInterval(3000)
-        self.controlTimer.timeout.connect(self.hideControls)
+        self.controlTimer.timeout.connect(self.hide_controls)
+
+        self.hide_controls()
+
         self.setMouseTracking(True)
 
-    def loadVideos(self):
-        print(self.folder)
-        if os.path.exists(self.folder):
-            self.playlist = [os.path.join(self.folder, f) for f in os.listdir(self.folder) if f.endswith(('.mp4', '.avi', '.mov', '.mkv'))]
-            self.currentIndex = 0
-            print(self.playlist)
-        else:
-            logging.error(f"Folder does not exist: {self.folder}")
-
-    def playVideo(self, videoPath):
-        self.media = self.instance.media_new(videoPath)
-        self.mediaPlayer.set_media(self.media)
-        self.mediaPlayer.play()
-        self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
-        self.playBtn.setToolTip('Pause')
-
-    def mediaStatusChanged(self, status):
-        if status == vlc.State.Ended:
-            self.currentIndex += 1
-            if self.currentIndex >= len(self.playlist):
-                self.currentIndex = 0
-            self.playVideo(self.playlist[self.currentIndex])
-
-    def playPauseVideo(self):
+    def play_pause(self):
         if self.mediaPlayer.is_playing():
             self.mediaPlayer.pause()
             self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
             self.playBtn.setToolTip('Play')
+            self.timer.stop()
         else:
             self.mediaPlayer.play()
             self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPause))
             self.playBtn.setToolTip('Pause')
+            self.timer.start()
 
-    def stopVideo(self):
-        self.mediaPlayer.stop()
-        self.positionChanged(0)
-        self.playBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaPlay))
-        self.playBtn.setToolTip('Play')
+    def play_video(self, file_path):
+        self.media = self.instance.media_new(file_path)
+        self.mediaPlayer.set_media(self.media)
+        self.mediaPlayer.set_hwnd(self.video_frame.winId())
+        self.mediaPlayer.play()
 
-    def nextVideo(self):
-        self.currentIndex += 1
-        if self.currentIndex >= len(self.playlist):
-            self.currentIndex = 0
-        self.playVideo(self.playlist[self.currentIndex])
-
-    def prevVideo(self):
-        self.currentIndex -= 1
-        if self.currentIndex < 0:
-            self.currentIndex = len(self.playlist) - 1
-        self.playVideo(self.playlist[self.currentIndex])
+        self.timer.start()
 
     def muteVideo(self):
         if self.mediaPlayer.audio_get_mute():
@@ -153,42 +91,32 @@ class VideoPlayer(QWidget):
             self.muteBtn.setIcon(self.style().standardIcon(QStyle.SP_MediaVolume))
             self.muteBtn.setToolTip('Unmute')
 
-    def handleError(self):
-        print("Error: " + self.mediaPlayer.errorString())
-
-    def positionChanged(self, position):
-        self.slider.setValue(position)
-
-    def durationChanged(self, duration):
-        self.slider.setRange(0, duration)
-
-    def setPosition(self, position):
-        self.mediaPlayer.set_time(position)
+    def update_ui(self):
+        if not self.mediaPlayer.is_playing():
+            self.timer.stop()
+            self.current_index += 1
+            if self.current_index >= len(self.video_files):
+                self.current_index = 0
+            self.play_video(self.video_files[self.current_index])
 
     def mouseMoveEvent(self, event):
-        self.showControls()
+        self.show_controls()
         self.controlTimer.start()
 
-    def showControls(self):
-        self.playBtn.show()
-        self.nextBtn.show()
-        self.prevBtn.show()
-        self.stopBtn.show()
-        self.muteBtn.show()
-        self.slider.show()
-        self.controlTimer.start()
-
-    def hideControls(self):
+    def hide_controls(self):
         self.playBtn.hide()
-        self.nextBtn.hide()
-        self.prevBtn.hide()
-        self.stopBtn.hide()
         self.muteBtn.hide()
-        self.slider.hide()
+        self.controlTimer.stop()
 
+    def show_controls(self):
+        self.playBtn.show()
+        self.muteBtn.show()
+        self.controlTimer.start()
+    
 
 if __name__ == '__main__':
+    folder_path = "video"  # Change this to the path of your video folder
     app = QApplication(sys.argv)
-    player = VideoPlayer()
+    player = VideoPlayer(folder_path)
     player.show()
     sys.exit(app.exec_())

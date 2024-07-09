@@ -26,13 +26,23 @@ class CurrentQueueApp(QWidget):
         layout = QVBoxLayout(wrapper_widget)
         layout.setSpacing(0)
         layout.setContentsMargins(0, 0, 0, 0)
-        
+        self.custom_widget = QWidget()
         
         if not self.isAdmin:
-            self.education_video = VideoPlayer()
+
+            video_layout = QHBoxLayout()
+            
+            self.custom_widget.setStyleSheet("background-color: #003468")
+            self.custom_widget.setMinimumSize(5, 5)
+            self.custom_widget.paintEvent = self.paintEvent
+            video_layout.addWidget(self.custom_widget)
+            
+            self.education_video = VideoPlayer("video")
             self.education_video.show()
 
-            layout.addWidget(self.education_video,3)
+            video_layout.addWidget(self.education_video)
+
+            layout.addLayout(video_layout,4)
 
         self.mediaPlayer = QMediaPlayer()
         self.mediaPlayer.stateChanged.connect(self.handle_media_state_changed)
@@ -66,6 +76,21 @@ class CurrentQueueApp(QWidget):
         main_layout.addWidget(wrapper_widget)
         self.setLayout(main_layout)
     
+    def paintEvent(self, event):
+        painter = QPainter(self.custom_widget)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        gradient = QLinearGradient(0, 0, self.custom_widget.width(), 0)
+        gradient.setColorAt(0.0, QColor(0, 0, 0, 150))  # Middle color
+        gradient.setColorAt(0.5, QColor(0, 0, 0, 100))  # Middle color
+        gradient.setColorAt(1.0, QColor(0, 0, 0, 10))  # End with transparent color
+
+        painter.setBrush(gradient)
+        painter.setPen(Qt.NoPen)
+
+        # Draw a rectangle to fill the widget area with gradient
+        painter.drawRect(0, 0, self.custom_widget.width(), self.custom_widget.height())
+
     def initSocketClient(self):
         self.socket_client = SocketClient()
         self.socket_client.message_received.connect(self.update_label)
