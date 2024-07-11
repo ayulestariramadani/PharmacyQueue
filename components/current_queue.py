@@ -14,7 +14,7 @@ class CurrentQueueApp(QWidget):
         self.isAdmin = isAdmin
         self.setObjectName('current_queue')
 
-        
+        self.data = []
         # Create the main layout
         main_layout = QVBoxLayout(self)
         main_layout.setSpacing(0)
@@ -108,10 +108,11 @@ class CurrentQueueApp(QWidget):
                 order_data[key.strip()] = value.strip()
 
             # Check if all required keys are in the order_data
-            required_keys = ['NORM', 'Name', 'isCall']
+            required_keys = ['NORM', 'Name', 'ID']
             if all(key in order_data for key in required_keys):
                 self.name_label.setText(f"{order_data['Name']}")
-                self.norm_label.setText(f"{order_data['NORM']}") 
+                self.norm_label.setText(f"{order_data['NORM']}")
+                self.data = [order_data['NORM'], order_data['Name'], order_data['ID']] 
                 if not self.isAdmin:
                     self.play_sound()
             else:
@@ -131,7 +132,7 @@ class CurrentQueueApp(QWidget):
         self.play_next_sound()
     
     def play_next_sound(self):
-        self.education_video.mediaPlayer.audio_set_mute(True)
+        # self.education_video.mediaPlayer.audio_set_mute(True)
         if self.index < len(self.sound_sequence):
             sound_file = rf"audio\{self.sound_sequence[self.index]}.wav"
             url = QUrl.fromLocalFile(sound_file)
@@ -142,7 +143,7 @@ class CurrentQueueApp(QWidget):
         else:
             self.mediaPlayer.setMedia(QMediaContent())
             self.index = 0
-            self.education_video.mediaPlayer.audio_set_mute(False)
+            # self.education_video.mediaPlayer.audio_set_mute(False)
 
     def handle_media_state_changed(self, state):
         if state == QMediaPlayer.StoppedState:

@@ -49,10 +49,38 @@ QListWidget{
     font-size: 15px;
     border: none;
 }
+#antrian_button{
+    background-color: #267B84;
+    border-radius: 7px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 15px;
+    padding-right: 15px;
+    color: white;
+    font-size: 15px;
+    border: none;
+}
+#selesai_button{
+    background-color: #0FAB1E;
+    border-radius: 7px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 15px;
+    padding-right: 15px;
+    color: white;
+    font-size: 15px;
+    border: none;
+}
 #panggil_button:pressed{
     background-color: #919191;
 }
-#panggil_button:disabled{
+#antrian_button:pressed{
+    background-color: #919191;
+}
+#selesai_button:pressed{
+    background-color: #919191;
+}
+#antrian_button:disabled{
     background-color: #919191;
 }
 #refresh_button:pressed{

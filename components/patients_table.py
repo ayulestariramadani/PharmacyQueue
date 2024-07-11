@@ -4,7 +4,7 @@ from pathlib import Path
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from services.jsonParser import combine_pharmacy_data, combine_pharmacy_admin
+from services.jsonParser import combine_pharmacy_data, combine_pharmacy_admin, add_antrian_farmasi, delete_antrian_farmasi
 from services.client import SocketClient
 from functools import partial
 from components.custom_button import CustomButton  
@@ -83,10 +83,10 @@ class PatientsTableApp(QWidget):
         # Load data automatically when the app starts
         self.load_data()
 
-        # Setup QTimer to reload data every 3 seconds 
+        # Setup QTimer to reload data every 1 seconds 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.load_data)
-        self.timer.start(3000)  # 3000 milliseconds = 3 seconds
+        self.timer.start(1000)  # 1000 milliseconds = 1 seconds
 
         self.orders = []
 
@@ -107,9 +107,22 @@ class PatientsTableApp(QWidget):
     
     @pyqtSlot(list)
     def send_message(self, patient_data):
-        message = f"NORM: {patient_data[0]}; Name: {patient_data[1]}; isCall: 1"
+        message = f"NORM: {patient_data[0]}; Name: {patient_data[1]}; ID: {patient_data[2]}"
         self.socket_client.send_message(message)
         # self.name_text.clear()
+    
+    def add_data(self, data):
+        status_antrian = data[0] if data[0] is not None else ''
+        norm = data[1] if data[1] is not None else ''
+        nama_lengkap = data[2] if data[2] is not None else ''
+        dokter = data[3] if data[3] is not None else ''
+        asal = data[4] if data[4] is not None else ''
+
+        add_antrian_farmasi(status_antrian, norm, nama_lengkap, dokter, asal)
+    
+    def delete_data(self, id):
+        delete_antrian_farmasi(id=id)
+
 
     def populate_table(self):
         # Clear the table
@@ -145,7 +158,19 @@ class PatientsTableApp(QWidget):
                 button = CustomButton(' Panggil', "assets/speaker.png")
                 button.setObjectName('panggil_button')
                 button.setMinimumHeight(25)
-                button.clicked.connect(partial(self.send_message, [order['NORM'], order['NAMA_LENGKAP']]))
+                
+
+                antrian_button = CustomButton(' Antri', "assets/add.png")
+                antrian_button.setObjectName('antrian_button')
+                antrian_button.setMinimumHeight(25)
+                antrian_button.clicked.connect(partial(self.add_data, [order['QUEUE'], order['NORM'], order['NAMA_LENGKAP'], order['DOKTER'], order['ASAL_PASIEN']]))
+
+                selesai_button = CustomButton(' Selesai', "assets/check.png")
+                selesai_button.setObjectName('selesai_button')
+                selesai_button.setMinimumHeight(25)
+                if 'ID' in order:
+                    button.clicked.connect(partial(self.send_message, [order['NORM'], order['NAMA_LENGKAP'], order['ID']]))
+                    selesai_button.clicked.connect(partial(self.delete_data, order['ID']))
 
                 # Create a drop shadow effect
                 shadow = QGraphicsDropShadowEffect()
@@ -159,6 +184,7 @@ class PatientsTableApp(QWidget):
                 button_widget = QWidget()
                 button_layout = QHBoxLayout(button_widget)
                 button_layout.addWidget(button)
+                button_layout.addWidget(selesai_button)
                 button_layout.setAlignment(Qt.AlignCenter)
                 button_layout.setContentsMargins(0, 0, 0, 0)
                 button_widget.setLayout(button_layout)
@@ -166,12 +192,15 @@ class PatientsTableApp(QWidget):
                 button_widget.setGraphicsEffect(shadow)
 
                 null_text = QLabel("")
-                if order['STATUS_FARMASI'] == '2':
-                    self.patient_table.setCellWidget(row, 4, null_text)
-                        
+                if 'STATUS_ORDER_RESEP' in order:
+                    if order['STATUS_FARMASI'] == '2' and order['STATUS_ORDER_RESEP'] == '2':
+                        self.patient_table.setCellWidget(row, 4, null_text)
+                            
+                    else:
+                        if order['STATUS_ORDER_RESEP'] == '1':
+                            antrian_button.setEnabled(False)
+                        self.patient_table.setCellWidget(row, 4, antrian_button)
                 else:
-                    if order['STATUS_ORDER_RESEP'] == '1':
-                        button.setEnabled(False)
                     self.patient_table.setCellWidget(row, 4, button_widget)
                     
                         
@@ -183,7 +212,7 @@ class PatientsTableApp(QWidget):
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         if self.isAdmin:
             header.setSectionResizeMode(4, QHeaderView.Fixed)
-            self.patient_table.setColumnWidth(4, 115)
+            self.patient_table.setColumnWidth(4, 200)
             
         self.patient_table.resizeRowsToContents()
 

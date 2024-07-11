@@ -1,6 +1,5 @@
 import sys
-from pathlib import Path
-from functools import partial 
+from pathlib import Path 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -9,7 +8,7 @@ from components.patients_table import PatientsTableApp
 from components.header_queue import HeaderQueueApp
 from components.custom_button import CustomButton
 from services.client import SocketClient
-from functools import partial
+from services.jsonParser import delete_antrian_farmasi, get_antrian_farmasi
 
 
 class PharmacyDisplayApp(QMainWindow):
@@ -49,10 +48,14 @@ class PharmacyDisplayApp(QMainWindow):
 
         button_widget = QWidget()
         button_widget.setObjectName('button_widget')
+        buttons_layout = QVBoxLayout(button_widget)
+        buttons_layout.setSpacing(50)
+        buttons_layout.setContentsMargins(200, 0, 200, 200)
 
-        button_layout = QHBoxLayout(button_widget)
+
+        button_layout = QHBoxLayout()
         button_layout.setSpacing(50)
-        button_layout.setContentsMargins(50, 0, 50, 200)
+        button_layout.setContentsMargins(0, 0, 0, 0)
         self.data = []
         # Add Panggil Button
         self.panggil_button = CustomButton(" Panggil", "assets/speaker.png")
@@ -66,8 +69,17 @@ class PharmacyDisplayApp(QMainWindow):
         refresh_button.setObjectName('refresh_button')
         refresh_button.clicked.connect(self.patient_list.load_data)
 
+        selesai_button = CustomButton(" Selesai", "assets/check.png")
+        selesai_button.setObjectName('selesai_button')
+        selesai_button.setFixedSize(150,25)
+        selesai_button.clicked.connect(self.delete_data)
+
+
         button_layout.addWidget(refresh_button)
         button_layout.addWidget(self.panggil_button)
+
+        buttons_layout.addLayout(button_layout)
+        buttons_layout.addWidget(selesai_button, alignment=Qt.AlignCenter)
         
         self.right_layout.addWidget(self.current_queue)
         self.right_layout.addWidget(button_widget)
@@ -90,13 +102,29 @@ class PharmacyDisplayApp(QMainWindow):
     
     @pyqtSlot(list)
     def send_message(self, patient_data):
-        message = f"NORM: {patient_data[0]}; Name: {patient_data[1]}; isCall: 1"
+        message = f"NORM: {patient_data[0]}; Name: {patient_data[1]}; ID: {patient_data[2]}"
+        print(message)
         self.socket_client.send_message(message)
         # self.name_text.clear()
     
+    def delete_data(self):
+        delete_antrian_farmasi(self.data[2])
+        data = get_antrian_farmasi()
+        if data !=[]:
+            current_data = data[0]
+            self.current_queue.data = [current_data['NORM'], current_data['NAMA_LENGKAP'], current_data['ID']]
+            
+        else:
+            self.current_queue.data = ["-","-","-"]
+
+        self.current_queue.norm_label.setText(self.current_queue.data[0])
+        self.current_queue.name_label.setText(self.current_queue.data[1])
+        print(self.data)
+
+
     def update_data(self):
         # Handle the label text change
-        self.data = [self.current_queue.norm_label.text(), self.current_queue.name_label.text()]
+        self.data = self.current_queue.data
     
     def send_data(self):
         self.send_message(self.data)

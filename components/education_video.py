@@ -57,6 +57,7 @@ class VideoPlayer(QMainWindow):
         self.controlTimer.setInterval(3000)
         self.controlTimer.timeout.connect(self.hide_controls)
 
+        self.mediaPlayer.audio_set_mute(True)
         self.hide_controls()
 
         self.setMouseTracking(True)
