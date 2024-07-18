@@ -109,17 +109,17 @@ QLabel#queue_title{
 }
 #norm_label{
     font-family: 'Sagoe UI';
-    font-size: 128px;
+    font-size: 50px;
     font-weight: 700;
-    color: black;
+    color: #003468;
     margin:0px;
     padding:0px;
 }
 #name_label{
     font-family: 'Sagoe UI';
-    font-size: 40px;
+    font-size: 100px;
     font-weight: 700;
-    color: #003468;
+    color: black;
     margin:0px;
     padding:0px;
 }
@@ -149,12 +149,11 @@ QLabel#queue_title{
 }
 QTableWidget {
     background-color: #003468;
-    border: none;
     font-size: 20px;
+    
 }
 QTableWidget::item {
     padding: 10px;
-    border: none;
     color: white;
 }
 QHeaderView::section {

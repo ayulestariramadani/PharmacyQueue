@@ -1,8 +1,7 @@
 import sys
 from pathlib import Path 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QVBoxLayout, QMainWindow, QApplication, QWidget, QHBoxLayout
+from PyQt5.QtCore import pyqtSlot, Qt, QTimer
 from components.current_queue import CurrentQueueApp
 from components.patients_table import PatientsTableApp
 from components.header_queue import HeaderQueueApp
@@ -50,7 +49,7 @@ class PharmacyDisplayApp(QMainWindow):
         button_widget.setObjectName('button_widget')
         buttons_layout = QVBoxLayout(button_widget)
         buttons_layout.setSpacing(50)
-        buttons_layout.setContentsMargins(200, 0, 200, 200)
+        buttons_layout.setContentsMargins(200, 100, 200, 200)
 
 
         button_layout = QHBoxLayout()

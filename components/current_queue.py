@@ -1,7 +1,7 @@
 import sys
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QLabel, QSizePolicy
+from PyQt5.QtGui import QColor, QPainter, QLinearGradient
+from PyQt5.QtCore import Qt, pyqtSlot, QUrl
 from services.client import SocketClient
 from components.education_video import VideoPlayer
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
@@ -25,7 +25,7 @@ class CurrentQueueApp(QWidget):
         wrapper_widget.setObjectName('wrapper_widget')
         layout = QVBoxLayout(wrapper_widget)
         layout.setSpacing(0)
-        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setContentsMargins(0, 0, 0, 100)
         self.custom_widget = QWidget()
         
         if not self.isAdmin:
@@ -42,36 +42,38 @@ class CurrentQueueApp(QWidget):
 
             video_layout.addWidget(self.education_video)
 
-            layout.addLayout(video_layout,4)
+            layout.addLayout(video_layout,1)
 
         self.mediaPlayer = QMediaPlayer()
         self.mediaPlayer.stateChanged.connect(self.handle_media_state_changed)
 
+        layout_queue = QVBoxLayout()
         # Add a label for title
         queue_title = QLabel("Antrian yang Dilayani")
         queue_title.setObjectName('queue_title')
         queue_title.setAlignment(Qt.AlignHCenter | Qt.AlignBottom)
-        # Add queue_title to main layout
-        layout.addWidget(queue_title, 1)
+        
 
         # Add Label Current Numbers
         self.norm_label = QLabel("-")
         self.norm_label.setObjectName('norm_label')
-        self.norm_label.setContentsMargins(0, 0, 0, 0)
+        self.norm_label.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
         self.norm_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.norm_label.setMinimumHeight(self.norm_label.sizeHint().height()+100)
-
-        self.norm_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.norm_label, 1)
+        self.norm_label.setMinimumHeight(self.norm_label.sizeHint().height())
+        
 
         # Add Label Current Number
         self.name_label = QLabel("-")
         self.name_label.setObjectName('name_label')
         self.name_label.setContentsMargins(0, 0, 0, 0)
-        self.name_label.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        self.name_label.setAlignment(Qt.AlignCenter)
         self.name_label.setWordWrap(True)
         # Add current number to main layout
-        layout.addWidget(self.name_label, 1)
+        layout_queue.addWidget(queue_title, 1)
+        layout_queue.addWidget(self.name_label, 1)
+        layout_queue.addWidget(self.norm_label, 1)
+
+        layout.addLayout(layout_queue, 1)
         
         main_layout.addWidget(wrapper_widget)
         self.setLayout(main_layout)

@@ -1,13 +1,13 @@
 import sys
 import qtawesome as qta
 from pathlib import Path
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from services.jsonParser import combine_pharmacy_data, combine_pharmacy_admin, add_antrian_farmasi, delete_antrian_farmasi
+from PyQt5.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QLabel, QPushButton, QLineEdit, QTableWidget, QTableWidgetItem, QGraphicsDropShadowEffect, QGraphicsDropShadowEffect, QHeaderView
+from PyQt5.QtGui import QPixmap, QColor, QBrush
+from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QTimer
+from services.jsonParser import combine_pharmacy_data, combine_pharmacy_admin, add_antrian_farmasi, delete_antrian_farmasi, update_antrian_farmasi
 from services.client import SocketClient
 from functools import partial
-from components.custom_button import CustomButton  
+from components.custom_button import CustomButton
 
 class PatientsTableApp(QWidget):
     # Define custom signal
@@ -16,6 +16,7 @@ class PatientsTableApp(QWidget):
     def __init__(self, isAdmin=False):
         super().__init__()
         self.initSocketClient()
+        
 
         self.isAdmin = isAdmin
         self.setObjectName('PatientsListApp')
@@ -26,6 +27,7 @@ class PatientsTableApp(QWidget):
         self.layout.setContentsMargins(40, 40, 40, 20)
 
         self.setLayout(self.layout)
+        self.selected_row = None
         
         # Create and add the search bar
         if self.isAdmin:
@@ -86,19 +88,21 @@ class PatientsTableApp(QWidget):
         # Setup QTimer to reload data every 1 seconds 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.load_data)
-        self.timer.start(1000)  # 1000 milliseconds = 1 seconds
+        self.timer.start(3000)  # 1000 milliseconds = 1 seconds
 
         self.orders = []
+        self.queue = 0
 
     def removeText(self):
         self.search_bar.setText("")
         
     def load_data(self):
         if self.isAdmin:
-            self.orders = combine_pharmacy_admin()
+            self.orders, self.queue = combine_pharmacy_admin()
         else:
             self.orders = combine_pharmacy_data()
         self.populate_table()
+        
 
     def initSocketClient(self):
         self.socket_client = SocketClient()
@@ -109,6 +113,7 @@ class PatientsTableApp(QWidget):
     def send_message(self, patient_data):
         message = f"NORM: {patient_data[0]}; Name: {patient_data[1]}; ID: {patient_data[2]}"
         self.socket_client.send_message(message)
+        
         # self.name_text.clear()
     
     def add_data(self, data):
@@ -117,12 +122,43 @@ class PatientsTableApp(QWidget):
         nama_lengkap = data[2] if data[2] is not None else ''
         dokter = data[3] if data[3] is not None else ''
         asal = data[4] if data[4] is not None else ''
+        self.load_data()
 
         add_antrian_farmasi(status_antrian, norm, nama_lengkap, dokter, asal)
     
     def delete_data(self, id):
         delete_antrian_farmasi(id=id)
+        self.selected_row = None
+        self.load_data()
+    
+    def update_data(self, id):
+        update_antrian_farmasi(id=id, is_active=self.queue+1)
+        self.load_data()
 
+    def panggil_pasien(self, patient_data, row):
+        self.send_message(patient_data=patient_data)
+        if self.selected_row is not None:
+            color = QColor(0,52,104)  
+            # Set the background and foreground colors for the selected row
+            for c in range(self.patient_table.columnCount()+1):
+                item = self.patient_table.item(self.selected_row, c)
+                if item:
+                    item.setBackground(QBrush(color))
+
+        self.selected_row = row
+        self.apply_row_style(row)
+        
+        
+    def apply_row_style(self, row):
+        color = QColor(207,171,122) 
+        # Set the background and foreground colors for the selected row
+        for c in range(self.patient_table.columnCount()+1):
+            item = self.patient_table.item(row, c)
+            if item:
+                item.setBackground(QBrush(color))
+
+        # Update the table widget to reflect the color change
+        self.patient_table.viewport().repaint()
 
     def populate_table(self):
         # Clear the table
@@ -163,14 +199,14 @@ class PatientsTableApp(QWidget):
                 antrian_button = CustomButton(' Antri', "assets/add.png")
                 antrian_button.setObjectName('antrian_button')
                 antrian_button.setMinimumHeight(25)
-                antrian_button.clicked.connect(partial(self.add_data, [order['QUEUE'], order['NORM'], order['NAMA_LENGKAP'], order['DOKTER'], order['ASAL_PASIEN']]))
+                
 
                 selesai_button = CustomButton(' Selesai', "assets/check.png")
                 selesai_button.setObjectName('selesai_button')
                 selesai_button.setMinimumHeight(25)
-                if 'ID' in order:
-                    button.clicked.connect(partial(self.send_message, [order['NORM'], order['NAMA_LENGKAP'], order['ID']]))
-                    selesai_button.clicked.connect(partial(self.delete_data, order['ID']))
+                # if 'ID' in order:
+                #     button.clicked.connect(partial(self.send_message, [order['NORM'], order['NAMA_LENGKAP'], order['ID']]))
+                #     selesai_button.clicked.connect(partial(self.delete_data, order['ID']))
 
                 # Create a drop shadow effect
                 shadow = QGraphicsDropShadowEffect()
@@ -200,11 +236,29 @@ class PatientsTableApp(QWidget):
                         if order['STATUS_ORDER_RESEP'] == '1':
                             antrian_button.setEnabled(False)
                         self.patient_table.setCellWidget(row, 4, antrian_button)
-                else:
-                    self.patient_table.setCellWidget(row, 4, button_widget)
+                        antrian_button.clicked.connect(partial(self.add_data, [order['QUEUE'], order['NORM'], order['NAMA_LENGKAP'], order['DOKTER'], order['ASAL_PASIEN']]))
+                elif 'ID' in order:
+                    button.clicked.connect(partial(self.panggil_pasien, [order['NORM'], order['NAMA_LENGKAP'], order['ID']], row))
+                    selesai_button.clicked.connect(partial(self.delete_data, order['ID']))
+                    if order['IS_ACTIVE'] == 0:
+                        self.patient_table.setCellWidget(row, 4, antrian_button)
+                        antrian_button.clicked.connect(partial(self.update_data, order['ID']))
+                    else:
+                        self.patient_table.setCellWidget(row, 4, button_widget)
+
+                
                     
                         
-
+        if self.isAdmin:
+            print(self.search_bar.text)
+            if self.selected_row is not None and self.search_bar.text=="":
+                    self.apply_row_style(self.selected_row)
+            self.patient_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+            self.patient_table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        else:
+            self.patient_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self.patient_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self.patient_table.setStyleSheet("border: none;")
         header = self.patient_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
