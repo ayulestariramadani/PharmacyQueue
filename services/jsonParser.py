@@ -8,6 +8,7 @@ config = dotenv_values(".env")
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     handlers=[logging.FileHandler('app.log'), logging.StreamHandler()])
+current_date = datetime.now().date()
 
 def login_sso():
     # Define the data to be sent in the POST request
@@ -80,7 +81,7 @@ def get_order_farmasi(status_code, farmasi_code):
     token = new_token_simata()
 
     # Get the current date
-    current_date = datetime.now().date()
+    # current_date = datetime.now().date()
 
     data = {
         'PNOPEN': '',
@@ -124,7 +125,7 @@ def get_order_refraksi():
     token = new_token_simata()
 
     # Get the current date
-    current_date = datetime.now().date()
+    # current_date = datetime.now().date()
     # current_date = '2024-06-25'
 
     data = {
@@ -196,7 +197,7 @@ def get_antrian_farmasi():
         logging.error(f'Error get antrian farmasi: {e.reason}')
         return None
 
-def add_antrian_farmasi(queue, norm, nama_lengkap, dokter, asal):
+def add_antrian_farmasi(queue, norm, nama_lengkap, dokter, asal, tanggal_order):
     url = config['URL_ADD_ANTRIAN_FARMASI']
     token = new_token_simata()
 
@@ -205,6 +206,7 @@ def add_antrian_farmasi(queue, norm, nama_lengkap, dokter, asal):
     nama_lengkap = nama_lengkap if nama_lengkap is not None else ''
     dokter = dokter if dokter is not None else ''
     asal = asal if asal is not None else ''
+    tanggal_order = tanggal_order if tanggal_order is not None else ''
 
     data = {
         "QUEUE": queue,
@@ -212,6 +214,7 @@ def add_antrian_farmasi(queue, norm, nama_lengkap, dokter, asal):
         "NAMA_LENGKAP": nama_lengkap,
         "DOKTER": dokter,
         "ASAL_PASIEN": asal,
+        "TANGGAL_ORDER": tanggal_order,
     }
     # Convert the data to a JSON string and then to bytes
     data = json.dumps(data).encode('utf-8')
@@ -374,11 +377,17 @@ def combine_pharmacy_admin():
                 if entry['STATUS_FARMASI'] == '1' and entry['STATUS_ORDER_RESEP'] == '2':
                     found = any(pasien['QUEUE'] == queue for pasien in antrian )
                     if not found:
-                        add_antrian_farmasi(entry['QUEUE'], entry['NORM'], entry['NAMA_LENGKAP'], entry['DOKTER'], entry['ASAL_PASIEN'])
+                        add_antrian_farmasi(entry['QUEUE'], entry['NORM'], entry['NAMA_LENGKAP'], entry['DOKTER'], entry['ASAL_PASIEN'], entry['TANGGAL_ORDER'])
                     
 
     # return combined_data
     return unique_data, max_antrian
 
-combine_pharmacy_data()
+def delete_prev_date_data():
+    antrian = get_antrian_farmasi()
+    current_date_str = current_date.strftime('%Y-%m-%d')
+    for data in antrian:
+        if data['TANGGAL_ORDER']!=current_date_str:
+            delete_antrian_farmasi(id=data['ID'])
+
 

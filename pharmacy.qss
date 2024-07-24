@@ -71,6 +71,18 @@ QListWidget{
     font-size: 15px;
     border: none;
 }
+#call_name{
+    background-color: #ffcc00;
+    border-radius: 7px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    padding-left: 15px;
+    padding-right: 15px;
+    color: white;
+    font-size: 15px;
+    border: none;
+}
+
 #panggil_button:pressed{
     background-color: #919191;
 }

@@ -1,4 +1,5 @@
 import sys
+import os
 from pathlib import Path 
 from PyQt5.QtWidgets import QVBoxLayout, QMainWindow, QApplication, QWidget, QHBoxLayout
 from PyQt5.QtCore import pyqtSlot, Qt, QTimer
@@ -7,7 +8,8 @@ from components.patients_table import PatientsTableApp
 from components.header_queue import HeaderQueueApp
 from components.custom_button import CustomButton
 from services.client import SocketClient
-from services.jsonParser import delete_antrian_farmasi, get_antrian_farmasi
+from services.jsonParser import delete_antrian_farmasi, get_antrian_farmasi, delete_prev_date_data
+
 
 
 class PharmacyDisplayApp(QMainWindow):
@@ -15,6 +17,7 @@ class PharmacyDisplayApp(QMainWindow):
         super().__init__()
 
         self.initSocketClient()
+        delete_prev_date_data()
 
         self.setWindowTitle('Pharmacy Admin')
         self.showFullScreen()
@@ -83,7 +86,7 @@ class PharmacyDisplayApp(QMainWindow):
         self.right_layout.addWidget(self.current_queue)
         self.right_layout.addWidget(button_widget)
 
-        self.main_layout.addLayout(self.right_layout,2)
+        self.main_layout.addLayout(self.right_layout,1)
 
         self.screen_layout.addLayout(self.main_layout)
 
@@ -101,7 +104,7 @@ class PharmacyDisplayApp(QMainWindow):
     
     @pyqtSlot(list)
     def send_message(self, patient_data):
-        message = f"NORM: {patient_data[0]}; Name: {patient_data[1]}; ID: {patient_data[2]}"
+        message = f"NORM: {patient_data[0]}; Name: {patient_data[1]}; ID: {patient_data[2]}; Call_Name: {patient_data[3]}"
         print(message)
         self.socket_client.send_message(message)
         # self.name_text.clear()
@@ -111,10 +114,10 @@ class PharmacyDisplayApp(QMainWindow):
         data = get_antrian_farmasi()
         if data !=[]:
             current_data = data[0]
-            self.current_queue.data = [current_data['NORM'], current_data['NAMA_LENGKAP'], current_data['ID']]
+            self.current_queue.data = [current_data['NORM'], current_data['NAMA_LENGKAP'], current_data['ID'], "0"]
             
         else:
-            self.current_queue.data = ["-","-","-"]
+            self.current_queue.data = ["-","-","-","0"]
 
         self.current_queue.norm_label.setText(self.current_queue.data[0])
         self.current_queue.name_label.setText(self.current_queue.data[1])
@@ -141,7 +144,6 @@ class PharmacyDisplayApp(QMainWindow):
                 # Enter full screen mode if currently not in full screen
                 self.showFullScreen()
             self.isFullScreen = not self.isFullScreen
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

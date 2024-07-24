@@ -1,13 +1,20 @@
 import sys
+import os
 import qtawesome as qta
 from pathlib import Path
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QLabel, QPushButton, QLineEdit, QTableWidget, QTableWidgetItem, QGraphicsDropShadowEffect, QGraphicsDropShadowEffect, QHeaderView
 from PyQt5.QtGui import QPixmap, QColor, QBrush
 from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QTimer
-from services.jsonParser import combine_pharmacy_data, combine_pharmacy_admin, add_antrian_farmasi, delete_antrian_farmasi, update_antrian_farmasi
+from services.jsonParser import combine_pharmacy_data, combine_pharmacy_admin, delete_antrian_farmasi, update_antrian_farmasi
 from services.client import SocketClient
 from functools import partial
 from components.custom_button import CustomButton
+from openpyxl import Workbook, load_workbook
+from openpyxl.utils.exceptions import SheetTitleException
+from openpyxl.worksheet.table import Table, TableStyleInfo
+from datetime import datetime
+import logging
+import pandas as pd
 
 class PatientsTableApp(QWidget):
     # Define custom signal
@@ -17,7 +24,6 @@ class PatientsTableApp(QWidget):
         super().__init__()
         self.initSocketClient()
         
-
         self.isAdmin = isAdmin
         self.setObjectName('PatientsListApp')
 
@@ -62,7 +68,7 @@ class PatientsTableApp(QWidget):
 
         
         # Add a label for title
-        title = QLabel("Antrian Order Resep")
+        title = QLabel("Antrian Resep Apotik")
         title.setObjectName('title')
         title.setAlignment(Qt.AlignLeft)
         # Add title to main layout
@@ -111,31 +117,22 @@ class PatientsTableApp(QWidget):
     
     @pyqtSlot(list)
     def send_message(self, patient_data):
-        message = f"NORM: {patient_data[0]}; Name: {patient_data[1]}; ID: {patient_data[2]}"
+        message = f"NORM: {patient_data[0]}; Name: {patient_data[1]}; ID: {patient_data[2]}; Call_Name: {patient_data[3]}"
         self.socket_client.send_message(message)
         
         # self.name_text.clear()
-    
-    def add_data(self, data):
-        status_antrian = data[0] if data[0] is not None else ''
-        norm = data[1] if data[1] is not None else ''
-        nama_lengkap = data[2] if data[2] is not None else ''
-        dokter = data[3] if data[3] is not None else ''
-        asal = data[4] if data[4] is not None else ''
-        self.load_data()
-
-        add_antrian_farmasi(status_antrian, norm, nama_lengkap, dokter, asal)
     
     def delete_data(self, id):
         delete_antrian_farmasi(id=id)
         self.selected_row = None
         self.load_data()
     
-    def update_data(self, id):
+    def update_data(self, id, status_antrian, nama_lengkap):
         update_antrian_farmasi(id=id, is_active=self.queue+1)
+        self.add_data_to_excel(status_antrian, nama_lengkap)
         self.load_data()
 
-    def panggil_pasien(self, patient_data, row):
+    def panggil_pasien(self, patient_data, row, queue):
         self.send_message(patient_data=patient_data)
         if self.selected_row is not None:
             color = QColor(0,52,104)  
@@ -147,6 +144,7 @@ class PatientsTableApp(QWidget):
 
         self.selected_row = row
         self.apply_row_style(row)
+        self.update_data_in_excel(queue)
         
         
     def apply_row_style(self, row):
@@ -204,9 +202,10 @@ class PatientsTableApp(QWidget):
                 selesai_button = CustomButton(' Selesai', "assets/check.png")
                 selesai_button.setObjectName('selesai_button')
                 selesai_button.setMinimumHeight(25)
-                # if 'ID' in order:
-                #     button.clicked.connect(partial(self.send_message, [order['NORM'], order['NAMA_LENGKAP'], order['ID']]))
-                #     selesai_button.clicked.connect(partial(self.delete_data, order['ID']))
+
+                call_name  = CustomButton('', "assets/speaker.png")
+                call_name.setObjectName('call_name')
+                call_name.setMinimumHeight(25)
 
                 # Create a drop shadow effect
                 shadow = QGraphicsDropShadowEffect()
@@ -219,6 +218,7 @@ class PatientsTableApp(QWidget):
                 
                 button_widget = QWidget()
                 button_layout = QHBoxLayout(button_widget)
+                button_layout.addWidget(call_name)
                 button_layout.addWidget(button)
                 button_layout.addWidget(selesai_button)
                 button_layout.setAlignment(Qt.AlignCenter)
@@ -236,22 +236,18 @@ class PatientsTableApp(QWidget):
                         if order['STATUS_ORDER_RESEP'] == '1':
                             antrian_button.setEnabled(False)
                         self.patient_table.setCellWidget(row, 4, antrian_button)
-                        antrian_button.clicked.connect(partial(self.add_data, [order['QUEUE'], order['NORM'], order['NAMA_LENGKAP'], order['DOKTER'], order['ASAL_PASIEN']]))
                 elif 'ID' in order:
-                    button.clicked.connect(partial(self.panggil_pasien, [order['NORM'], order['NAMA_LENGKAP'], order['ID']], row))
+                    call_name.clicked.connect(partial(self.panggil_pasien, [order['NORM'], order['NAMA_LENGKAP'], order['ID'], "1"], row, order['QUEUE']))
+                    button.clicked.connect(partial(self.panggil_pasien, [order['NORM'], order['NAMA_LENGKAP'], order['ID'], "0"], row, order['QUEUE']))
                     selesai_button.clicked.connect(partial(self.delete_data, order['ID']))
                     if order['IS_ACTIVE'] == 0:
                         self.patient_table.setCellWidget(row, 4, antrian_button)
-                        antrian_button.clicked.connect(partial(self.update_data, order['ID']))
+                        antrian_button.clicked.connect(partial(self.update_data, order['ID'], order['QUEUE'], order['NAMA_LENGKAP']))
                     else:
                         self.patient_table.setCellWidget(row, 4, button_widget)
-
-                
-                    
-                        
+              
         if self.isAdmin:
-            print(self.search_bar.text)
-            if self.selected_row is not None and self.search_bar.text=="":
+            if self.selected_row is not None and self.search_bar.text()=="":
                     self.apply_row_style(self.selected_row)
             self.patient_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
             self.patient_table.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
@@ -259,6 +255,7 @@ class PatientsTableApp(QWidget):
             self.patient_table.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self.patient_table.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
             self.patient_table.setStyleSheet("border: none;")
+
         header = self.patient_table.horizontalHeader()
         header.setSectionResizeMode(0, QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
@@ -266,9 +263,129 @@ class PatientsTableApp(QWidget):
         header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
         if self.isAdmin:
             header.setSectionResizeMode(4, QHeaderView.Fixed)
-            self.patient_table.setColumnWidth(4, 200)
+            self.patient_table.setColumnWidth(4, 250)
             
         self.patient_table.resizeRowsToContents()
+    
+    def add_data_to_excel(self, queue, name):
+        print('-------------------ADD DATA----------------')
+        print('-------------------ADD DATA----------------')
+        print('-------------------ADD DATA----------------')
+        now = datetime.now()
+        year_str = now.strftime('%Y')
+        month_str = now.strftime('%m ANTRIAN APOTEK %B %Y').upper()
+        today_str = now.strftime('%d')
+        arrive = now.strftime("%H:%M")
+        # Define the folder name based on the current year
+        folder_name = year_str
+
+        # Create the folder if it doesn't exist
+        if not os.path.exists(folder_name):
+            os.makedirs(folder_name)
+
+        # Define the Excel file name based on the current month
+        file_name = os.path.join(folder_name, f'{month_str}.xlsx')
+
+        # Check if the file exists and load or create a new DataFrame
+        if not os.path.exists(file_name):
+            df = pd.DataFrame(columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+            with pd.ExcelWriter(file_name, engine='openpyxl') as writer:
+                df.to_excel(writer, sheet_name=today_str, index=False)
+        else:
+            try:
+                df = pd.read_excel(file_name, sheet_name=today_str, dtype={'Queue': str})
+            except ValueError:
+                df = pd.DataFrame(columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+
+        queue_str = f'{int(queue):04}'
+        # Append the new data to the DataFrame
+        new_data = pd.DataFrame([[None ,queue_str, name, arrive, None, None]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+        
+        # Add index and update the DataFrame
+        if df.empty:
+            new_data['No'] = [1]
+        else:
+            new_data['No'] = [df['No'].max() + 1]
+        df = pd.concat([df, new_data], ignore_index=True)
+
+        # Remove old total and average rows if they exist
+        df = df[df['Queue'] != 'Total']
+        df = df[df['Queue'] != 'Average']
+
+        # Calculate total and average waiting time
+        total_waiting_time = df['Lama Waktu Tunggu (menit)'].sum(skipna=True)
+        average_waiting_time = df['Lama Waktu Tunggu (menit)'].mean(skipna=True)
+
+        total_row = pd.DataFrame([[None, 'Total', None, None, None, total_waiting_time]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+        average_row = pd.DataFrame([[None, 'Average', None, None, None, average_waiting_time]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+        df = pd.concat([df, total_row, average_row], ignore_index=True)
+
+        # Save the DataFrame back to the Excel file, specifying the sheet name
+        with pd.ExcelWriter(file_name, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+            df.to_excel(writer, sheet_name=today_str, index=False)
+    
+    def update_data_in_excel(self, queue):
+        print('-------------------UPDATE DATA----------------')
+        print('-------------------UPDATE DATA----------------')
+        print('-------------------UPDATE DATA----------------')
+
+        now = datetime.now()
+        arrive = now.strftime("%H:%M")
+
+        year_str = now.strftime('%Y')
+        month_str = now.strftime('%m ANTRIAN APOTEK %B %Y').upper()
+        today_str = now.strftime('%d')
+
+        folder_name = year_str
+        file_name = os.path.join(folder_name, f'{month_str}.xlsx')
+
+        if not os.path.exists(file_name):
+            print(f'File {file_name} does not exist.')
+            return
+
+        try:
+            df = pd.read_excel(file_name, sheet_name=today_str, dtype={'Queue': str})
+        except ValueError:
+            print(f'Sheet {today_str} does not exist in {file_name}.')
+            return
+
+        queue_str = f'{int(queue):04}'
+
+        if queue_str in df['Queue'].values:
+            idx = df.index[df['Queue'] == queue_str].tolist()
+            if idx:
+                row_index = idx[0]
+                if pd.isna(df.at[row_index, 'Penyerahan Obat']):
+                    df.at[row_index, 'Penyerahan Obat'] = arrive
+
+                    arrive_time = datetime.strptime(df.at[row_index, 'Pengumpulan Resep'], "%H:%M")
+                    penyerahan_time = datetime.strptime(arrive, "%H:%M")
+                    delta = penyerahan_time - arrive_time
+                    df.at[row_index, 'Lama Waktu Tunggu (menit)'] = delta.total_seconds() / 60.0
+
+                    # Remove old total and average rows if they exist
+                    df = df[df['Queue'] != 'Total']
+                    df = df[df['Queue'] != 'Average']
+
+                    # Calculate total and average waiting time
+                    total_waiting_time = df['Lama Waktu Tunggu (menit)'].sum(skipna=True)
+                    average_waiting_time = df['Lama Waktu Tunggu (menit)'].mean(skipna=True)
+
+                    total_row = pd.DataFrame([[None, 'Total', None, None, None, total_waiting_time]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+                    average_row = pd.DataFrame([[None, 'Average', None, None, None, average_waiting_time]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+                    df = pd.concat([df, total_row, average_row], ignore_index=True)
+
+                    with pd.ExcelWriter(file_name, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                        df.to_excel(writer, sheet_name=today_str, index=False)
+
+                    print(f'Data for Queue {queue_str} updated successfully.')
+                else:
+                    print(f'Queue {queue_str} already has a Penyerahan Obat entry.')
+            else:
+                print(f'Queue {queue_str} not found.')
+        else:
+            print(f'Queue {queue_str} not found in the data.')
+        
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

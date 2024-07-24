@@ -1,10 +1,12 @@
 import sys
+import os
 from PyQt5.QtWidgets import QHBoxLayout, QWidget, QVBoxLayout, QLabel, QSizePolicy
 from PyQt5.QtGui import QColor, QPainter, QLinearGradient
 from PyQt5.QtCore import Qt, pyqtSlot, QUrl
 from services.client import SocketClient
 from components.education_video import VideoPlayer
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
+from gtts import gTTS
 
 
 class CurrentQueueApp(QWidget):
@@ -25,7 +27,7 @@ class CurrentQueueApp(QWidget):
         wrapper_widget.setObjectName('wrapper_widget')
         layout = QVBoxLayout(wrapper_widget)
         layout.setSpacing(0)
-        layout.setContentsMargins(0, 0, 0, 100)
+        layout.setContentsMargins(0, 0, 0, 0)
         self.custom_widget = QWidget()
         
         if not self.isAdmin:
@@ -68,10 +70,12 @@ class CurrentQueueApp(QWidget):
         self.name_label.setContentsMargins(0, 0, 0, 0)
         self.name_label.setAlignment(Qt.AlignCenter)
         self.name_label.setWordWrap(True)
+        self.name_label.setMaximumHeight(200)
+
         # Add current number to main layout
-        layout_queue.addWidget(queue_title, 1)
-        layout_queue.addWidget(self.name_label, 1)
-        layout_queue.addWidget(self.norm_label, 1)
+        layout_queue.addWidget(queue_title, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout_queue.addWidget(self.name_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        layout_queue.addWidget(self.norm_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         layout.addLayout(layout_queue, 1)
         
@@ -110,23 +114,34 @@ class CurrentQueueApp(QWidget):
                 order_data[key.strip()] = value.strip()
 
             # Check if all required keys are in the order_data
-            required_keys = ['NORM', 'Name', 'ID']
+            required_keys = ['NORM', 'Name', 'ID', 'Call_Name']
             if all(key in order_data for key in required_keys):
                 self.name_label.setText(f"{order_data['Name']}")
                 self.norm_label.setText(f"{order_data['NORM']}")
                 self.data = [order_data['NORM'], order_data['Name'], order_data['ID']] 
-                if not self.isAdmin:
-                    self.play_sound()
+                if not self.isAdmin:    
+                    if order_data['Call_Name']=="1":
+                        self.call_name(f"{order_data['Name']}")
+                    self.play_sound(order_data['Call_Name'])
             else:
                 print("Message missing required keys")
         except Exception as e:
             print(f"Error parsing message: {e}")
 
-    def play_sound(self):
+    def call_name(self, text):
+        tts = gTTS(text=text, lang='id')
+        tts.save("audio/name.wav")
+        # os.system("start name.mp3")
+
+    def play_sound(self, call_name=None):
         number_list = self.angka_ke_nominal(self.norm_label.text())
-        sound_sequence = ['bell', 'nomorrm'] + number_list.split()
+        if call_name == "0":
+            sound_sequence = ['bell', 'nomorrm'] + number_list.split()
+        elif call_name =="1":
+            sound_sequence = ['bell', 'nomorrm'] + number_list.split() + ['name']
 
         self.play_sounds_in_sequence(sound_sequence, 0)
+    
 
     def play_sounds_in_sequence(self, sound_sequence, start_index):
         self.sound_sequence = sound_sequence
