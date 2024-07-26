@@ -7,6 +7,8 @@ from services.client import SocketClient
 from components.education_video import VideoPlayer
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 from gtts import gTTS
+import re
+
 
 
 class CurrentQueueApp(QWidget):
@@ -128,8 +130,21 @@ class CurrentQueueApp(QWidget):
         except Exception as e:
             print(f"Error parsing message: {e}")
 
+    def replace_at_start_of_sentence(self, text):
+        sub_pairs = []
+        with open('sub_pairs.txt', 'r') as file:
+            for line in file:
+                old, new = line.strip().split(',')
+                sub_pairs.append((old, new))
+        
+        for old, new in sub_pairs:
+            pattern = r'(?<!\S)' + re.escape(old)
+            text = re.sub(pattern, new, text)
+        return text
+
     def call_name(self, text):
-        tts = gTTS(text=text, lang='id')
+        text = self.replace_at_start_of_sentence(text)
+        tts = gTTS(text=text.lower(), lang='id')
         tts.save("audio/name.wav")
         # os.system("start name.mp3")
 

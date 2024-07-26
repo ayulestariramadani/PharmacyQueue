@@ -1,0 +1,16 @@
+Dg ,Deng
+Dg.,Deng
+Dra.,Doktoranda
+Drs.,Doktorandus
+Abd ,Abdul
+Abd.,Abdul
+Hj ,Haji
+Hj.,Haji
+H.,Haji
+H ,Haji
+Muh ,Muhammad
+Muh.,Muhammad
+A.,Andi
+A ,Andi
+Ir ,Insinyur
+Ir.,Insinyur

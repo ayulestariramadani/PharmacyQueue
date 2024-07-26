@@ -127,9 +127,9 @@ class PatientsTableApp(QWidget):
         self.selected_row = None
         self.load_data()
     
-    def update_data(self, id, status_antrian, nama_lengkap):
+    def update_data(self, id, status_antrian, nama_lengkap, norm):
         update_antrian_farmasi(id=id, is_active=self.queue+1)
-        self.add_data_to_excel(status_antrian, nama_lengkap)
+        self.add_data_to_excel(status_antrian, nama_lengkap, norm)
         self.load_data()
 
     def panggil_pasien(self, patient_data, row, queue):
@@ -242,7 +242,7 @@ class PatientsTableApp(QWidget):
                     selesai_button.clicked.connect(partial(self.delete_data, order['ID']))
                     if order['IS_ACTIVE'] == 0:
                         self.patient_table.setCellWidget(row, 4, antrian_button)
-                        antrian_button.clicked.connect(partial(self.update_data, order['ID'], order['QUEUE'], order['NAMA_LENGKAP']))
+                        antrian_button.clicked.connect(partial(self.update_data, order['ID'], order['QUEUE'], order['NAMA_LENGKAP'], order['NORM']))
                     else:
                         self.patient_table.setCellWidget(row, 4, button_widget)
               
@@ -267,15 +267,13 @@ class PatientsTableApp(QWidget):
             
         self.patient_table.resizeRowsToContents()
     
-    def add_data_to_excel(self, queue, name):
-        print('-------------------ADD DATA----------------')
-        print('-------------------ADD DATA----------------')
-        print('-------------------ADD DATA----------------')
+    def add_data_to_excel(self, queue, name, norm):
         now = datetime.now()
         year_str = now.strftime('%Y')
         month_str = now.strftime('%m ANTRIAN APOTEK %B %Y').upper()
         today_str = now.strftime('%d')
         arrive = now.strftime("%H:%M")
+        month_sheet = now.strftime('REKAP %B').upper()
         # Define the folder name based on the current year
         folder_name = year_str
 
@@ -288,46 +286,52 @@ class PatientsTableApp(QWidget):
 
         # Check if the file exists and load or create a new DataFrame
         if not os.path.exists(file_name):
-            df = pd.DataFrame(columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+            df = pd.DataFrame(columns=['No', 'Queue', 'NORM', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+            month_df = pd.DataFrame(columns=['No', 'Jumlah Sampel', 'WTOJ', 'Resep Melebihi 30 Menit', 'Persentase'])
             with pd.ExcelWriter(file_name, engine='openpyxl') as writer:
                 df.to_excel(writer, sheet_name=today_str, index=False)
+                month_df.to_excel(writer, sheet_name=month_sheet, index=False)
         else:
             try:
                 df = pd.read_excel(file_name, sheet_name=today_str, dtype={'Queue': str})
             except ValueError:
-                df = pd.DataFrame(columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+                df = pd.DataFrame(columns=['No', 'Queue', 'NORM', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
 
         queue_str = f'{int(queue):04}'
         # Append the new data to the DataFrame
-        new_data = pd.DataFrame([[None ,queue_str, name, arrive, None, None]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+        if queue_str not in df['Queue'].values:
+            new_data = pd.DataFrame([[None ,queue_str, norm, name, arrive, None, None]], columns=['No', 'Queue', 'NORM', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
         
-        # Add index and update the DataFrame
-        if df.empty:
-            new_data['No'] = [1]
-        else:
-            new_data['No'] = [df['No'].max() + 1]
-        df = pd.concat([df, new_data], ignore_index=True)
+            # Add index and update the DataFrame
+            if df.empty:
+                new_data['No'] = [1]
+            else:
+                new_data['No'] = [df['No'].max() + 1]
+            df = pd.concat([df, new_data], ignore_index=True)
 
-        # Remove old total and average rows if they exist
-        df = df[df['Queue'] != 'Total']
-        df = df[df['Queue'] != 'Average']
+            # Remove old total and average rows if they exist
+            df = df[df['Queue'] != 'Total']
+            df = df[df['Queue'] != 'WTOJ']
+            df = df[df['Queue'] != 'Lebih 30 Menit']
 
-        # Calculate total and average waiting time
-        total_waiting_time = df['Lama Waktu Tunggu (menit)'].sum(skipna=True)
-        average_waiting_time = df['Lama Waktu Tunggu (menit)'].mean(skipna=True)
+            # Calculate total and average waiting time
+            total_waiting_time = df['Lama Waktu Tunggu (menit)'].sum(skipna=True)
+            average_waiting_time = df['Lama Waktu Tunggu (menit)'].mean(skipna=True)
+            waiting_time_over_30 = (df['Lama Waktu Tunggu (menit)'] > 30).sum(skipna=True)
+            total = df['No'].max()
 
-        total_row = pd.DataFrame([[None, 'Total', None, None, None, total_waiting_time]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
-        average_row = pd.DataFrame([[None, 'Average', None, None, None, average_waiting_time]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
-        df = pd.concat([df, total_row, average_row], ignore_index=True)
+            total_row = pd.DataFrame([[None, 'Total', None, None, None, total_waiting_time]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+            average_row = pd.DataFrame([[None, 'WTOJ', None, None, None, average_waiting_time]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+            over_30_row = pd.DataFrame([[None, 'Lebih 30 Menit', None, None, None, waiting_time_over_30]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+            df = pd.concat([df, total_row, average_row, over_30_row], ignore_index=True)
 
-        # Save the DataFrame back to the Excel file, specifying the sheet name
-        with pd.ExcelWriter(file_name, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
-            df.to_excel(writer, sheet_name=today_str, index=False)
+            # Save the DataFrame back to the Excel file, specifying the sheet name
+            with pd.ExcelWriter(file_name, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                df.to_excel(writer, sheet_name=today_str, index=False)
+            
+            self.update_monthly_summary(file_name, month_sheet, today_str, total, average_waiting_time, waiting_time_over_30)
     
     def update_data_in_excel(self, queue):
-        print('-------------------UPDATE DATA----------------')
-        print('-------------------UPDATE DATA----------------')
-        print('-------------------UPDATE DATA----------------')
 
         now = datetime.now()
         arrive = now.strftime("%H:%M")
@@ -335,7 +339,7 @@ class PatientsTableApp(QWidget):
         year_str = now.strftime('%Y')
         month_str = now.strftime('%m ANTRIAN APOTEK %B %Y').upper()
         today_str = now.strftime('%d')
-
+        month_sheet = now.strftime('REKAP %B').upper()
         folder_name = year_str
         file_name = os.path.join(folder_name, f'{month_str}.xlsx')
 
@@ -365,18 +369,24 @@ class PatientsTableApp(QWidget):
 
                     # Remove old total and average rows if they exist
                     df = df[df['Queue'] != 'Total']
-                    df = df[df['Queue'] != 'Average']
+                    df = df[df['Queue'] != 'WTOJ']
+                    df = df[df['Queue'] != 'Lebih 30 Menit']
 
                     # Calculate total and average waiting time
                     total_waiting_time = df['Lama Waktu Tunggu (menit)'].sum(skipna=True)
                     average_waiting_time = df['Lama Waktu Tunggu (menit)'].mean(skipna=True)
+                    waiting_time_over_30 = (df['Lama Waktu Tunggu (menit)'] > 30).sum(skipna=True)
+                    total = df['No'].max()
 
                     total_row = pd.DataFrame([[None, 'Total', None, None, None, total_waiting_time]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
-                    average_row = pd.DataFrame([[None, 'Average', None, None, None, average_waiting_time]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
-                    df = pd.concat([df, total_row, average_row], ignore_index=True)
+                    average_row = pd.DataFrame([[None, 'WTOJ', None, None, None, average_waiting_time]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+                    over_30_row = pd.DataFrame([[None, 'Lebih 30 Menit', None, None, None, waiting_time_over_30]], columns=['No', 'Queue', 'Nama', 'Pengumpulan Resep', 'Penyerahan Obat', 'Lama Waktu Tunggu (menit)'])
+                    df = pd.concat([df, total_row, average_row, over_30_row], ignore_index=True)
 
                     with pd.ExcelWriter(file_name, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
                         df.to_excel(writer, sheet_name=today_str, index=False)
+                    
+                    self.update_monthly_summary(file_name, month_sheet, today_str, total, average_waiting_time, waiting_time_over_30)
 
                     print(f'Data for Queue {queue_str} updated successfully.')
                 else:
@@ -385,6 +395,24 @@ class PatientsTableApp(QWidget):
                 print(f'Queue {queue_str} not found.')
         else:
             print(f'Queue {queue_str} not found in the data.')
+    
+    def update_monthly_summary(self, file_name, sheet_name,today_str, total, wtoj, over_time):
+        # Read the monthly summary sheet
+        try:
+            monthly_summary_df = pd.read_excel(file_name, sheet_name=sheet_name)
+        except ValueError:
+            monthly_summary_df = pd.DataFrame(columns=['No', 'Jumlah Sampel', 'WTOJ', 'Resep Melebihi 30 Menit', 'Persentase'])
+        
+        persentase = f'{((total-over_time)/total)*100}%' if over_time != 0 else 0
+        # Update the total patients for the given date 
+        monthly_summary_df = monthly_summary_df[monthly_summary_df['No'] != monthly_summary_df['No'].values]
+
+        new_summary_data = pd.DataFrame([[today_str, total, wtoj, over_time,persentase]], columns=['No', 'Jumlah Sampel', 'WTOJ', 'Resep Melebihi 30 Menit', 'Persentase'])
+        monthly_summary_df = pd.concat([monthly_summary_df, new_summary_data], ignore_index=True)
+
+        # Save the updated monthly summary back to the Excel file
+        with pd.ExcelWriter(file_name, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+            monthly_summary_df.to_excel(writer, sheet_name=sheet_name, index=False)
         
 
 if __name__ == "__main__":
